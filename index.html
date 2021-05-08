@@ -228,11 +228,13 @@
 <span style="color: #008000">//=&gt; &lt;li class=&quot;pear&quot;&gt;Pear&lt;/li&gt;</span>
 </code></pre>
 				<p>By default, <code>html</code> will leave some tags open. Sometimes you may instead want to render a valid XML document. For example, you might parse the following XML snippet:</p>
-				<pre><code class="language-xml"><span style="color: #000000">const $ = cheerio.load(&#039;</span><span style="color: #800000">&lt;media:thumbnail</span><span style="color: #000000"> </span><span style="color: #FF0000">url</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;http://www.foo.com/keyframe.jpg&quot;</span><span style="color: #000000"> </span><span style="color: #FF0000">width</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;75&quot;</span><span style="color: #000000"> </span><span style="color: #FF0000">height</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;50&quot;</span><span style="color: #000000"> </span><span style="color: #FF0000">time</span><span style="color: #000000">=</span><span style="color: #0000FF">&quot;12:05:01.123&quot;</span><span style="color: #800000">/&gt;</span><span style="color: #000000">&#039;);</span>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000">(</span>
+<span style="color: #000000">  </span><span style="color: #A31515">&#039;&lt;media:thumbnail url=&quot;http://www.foo.com/keyframe.jpg&quot; width=&quot;75&quot; height=&quot;50&quot; time=&quot;12:05:01.123&quot;/&gt;&#039;</span>
+<span style="color: #000000">);</span>
 </code></pre>
 				<p>... and later want to render to XML. To do this, you can use the &#39;xml&#39; utility function:</p>
 				<pre><code class="language-js"><span style="color: #001080">$</span><span style="color: #000000">.</span><span style="color: #795E26">xml</span><span style="color: #000000">();</span>
-<span style="color: #008000">//=&gt;  &lt;media:thumbnail url=&quot;http://www.foo.com/keyframe.jpg&quot; width=&quot;75&quot; height=&quot;50&quot; time=&quot;12:05:01.123&quot;/&gt;</span>
+<span style="color: #008000">//=&gt; &lt;media:thumbnail url=&quot;http://www.foo.com/keyframe.jpg&quot; width=&quot;75&quot; height=&quot;50&quot; time=&quot;12:05:01.123&quot;/&gt;</span>
 </code></pre>
 				<p>You may also render the text content of a Cheerio object using the <code>text</code> static method:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;This is &lt;em&gt;content&lt;/em&gt;.&#039;</span><span style="color: #000000">);</span>
@@ -275,14 +277,6 @@
 					<h2>Cheerio in the real world</h2>
 				</a>
 				<p>Are you using cheerio in production? Add it to the <a href="https://github.com/cheeriojs/cheerio/wiki/Cheerio-in-Production">wiki</a>!</p>
-				<a href="#testing" id="testing" style="color: inherit; text-decoration: none;">
-					<h2>Testing</h2>
-				</a>
-				<p>To run the test suite, download the repository, then within the cheerio directory, run:</p>
-				<pre><code class="language-shell"><span style="color: #000000">make setup</span>
-<span style="color: #000000">make </span><span style="color: #795E26">test</span>
-</code></pre>
-				<p>This will download the development packages and run the test suite.</p>
 				<a href="#sponsors" id="sponsors" style="color: inherit; text-decoration: none;">
 					<h2>Sponsors</h2>
 				</a>
