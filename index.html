@@ -142,12 +142,10 @@
 <span style="color: #008000">//=&gt; &#039;&lt;ul id=&quot;fruits&quot;&gt;...&lt;/ul&gt;&#039;</span>
 </code></pre>
 				<p>Optionally, you can also load in the HTML by passing the string as the context:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;cheerio&#039;</span><span style="color: #000000">);</span>
-<span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;ul&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;&lt;ul id=&quot;fruits&quot;&gt;...&lt;/ul&gt;&#039;</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;ul&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;&lt;ul id=&quot;fruits&quot;&gt;...&lt;/ul&gt;&#039;</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>Or as the root:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;cheerio&#039;</span><span style="color: #000000">);</span>
-<span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;li&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;ul&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;&lt;ul id=&quot;fruits&quot;&gt;...&lt;/ul&gt;&#039;</span><span style="color: #000000">);</span>
+				<pre><code class="language-js"><span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;li&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;ul&#039;</span><span style="color: #000000">, </span><span style="color: #A31515">&#039;&lt;ul id=&quot;fruits&quot;&gt;...&lt;/ul&gt;&#039;</span><span style="color: #000000">);</span>
 </code></pre>
 				<p>If you need to modify parsing options for XML input, you may pass an extra
 				object to <code>.load()</code>:</p>
