@@ -78,9 +78,6 @@
 				<ul class="tsd-hierarchy">
 					<li>
 						<span class="tsd-signature-type">StaticType</span>
-					</li>
-					<li>
-						<span class="tsd-signature-type">LoadType</span>
 						<ul class="tsd-hierarchy">
 							<li>
 								<span class="target">CheerioAPI</span>
@@ -98,7 +95,7 @@
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/load.ts#L51">src/load.ts:51</a></li>
+								<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/load.ts#L48">src/load.ts:48</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -172,6 +169,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-private"><a href="CheerioAPI.html#_options" class="tsd-kind-icon">_options</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-private"><a href="CheerioAPI.html#_root" class="tsd-kind-icon">_root</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="CheerioAPI.html#fn" class="tsd-kind-icon">fn</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="CheerioAPI.html#load" class="tsd-kind-icon">load</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-inherited">
@@ -179,7 +177,6 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="CheerioAPI.html#contains" class="tsd-kind-icon">contains</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="CheerioAPI.html#html" class="tsd-kind-icon">html</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="CheerioAPI.html#load" class="tsd-kind-icon">load</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited"><a href="CheerioAPI.html#merge" class="tsd-kind-icon">merge</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="CheerioAPI.html#parseHTML" class="tsd-kind-icon">parseHTML</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="CheerioAPI.html#root" class="tsd-kind-icon">root</a></li>
@@ -198,7 +195,7 @@
 					<div class="tsd-signature tsd-kind-icon">_options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">InternalOptions</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/load.ts#L70">src/load.ts:70</a></li>
+							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/load.ts#L67">src/load.ts:67</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -213,7 +210,7 @@
 					<div class="tsd-signature tsd-kind-icon">_root<span class="tsd-signature-symbol">:</span> <a href="../classes/Document.html" class="tsd-signature-type" data-tsd-kind="Class">Document</a></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/load.ts#L63">src/load.ts:63</a></li>
+							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/load.ts#L60">src/load.ts:60</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -228,13 +225,73 @@
 					<div class="tsd-signature tsd-kind-icon">fn<span class="tsd-signature-symbol">:</span> <a href="../classes/Cheerio.html" class="tsd-signature-type" data-tsd-kind="Class">Cheerio</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/load.ts#L73">src/load.ts:73</a></li>
+							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/load.ts#L70">src/load.ts:70</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
 							<p>Mimic jQuery&#39;s prototype alias for plugin authors.</p>
 						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="load" class="tsd-anchor"></a>
+					<h3>load</h3>
+					<div class="tsd-signature tsd-kind-icon">load<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span>, options<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a>, isDocument<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><a href="CheerioAPI.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioAPI</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/load.ts#L72">src/load.ts:72</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-signature">
+								<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-interface">
+									<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span>, options<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a>, isDocument<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CheerioAPI.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioAPI</a></li>
+								</ul>
+								<ul class="tsd-descriptions">
+									<li class="tsd-description">
+										<div class="tsd-comment tsd-typography">
+											<div class="lead">
+												<p>Create a querying function, bound to a document created from the provided markup.</p>
+											</div>
+											<p>Note that similar to web browser contexts, this operation may introduce
+												<code>&lt;html&gt;</code>, <code>&lt;head&gt;</code>, and <code>&lt;body&gt;</code> elements; set <code>isDocument</code> to <code>false</code> to
+											switch to fragment mode and disable this.</p>
+											<dl class="tsd-comment-tags">
+												<dt>see</dt>
+												<dd><p><a href="https://cheerio.js.org#loading" class="external">https://cheerio.js.org#loading</a> for additional usage information.</p>
+												</dd>
+											</dl>
+										</div>
+										<h4 class="tsd-parameters-title">Parameters</h4>
+										<ul class="tsd-parameters">
+											<li>
+												<h5>content: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span></h5>
+												<div class="tsd-comment tsd-typography">
+													<p>Markup to be loaded.</p>
+												</div>
+											</li>
+											<li>
+												<h5><span class="tsd-flag ts-flagOptional">Optional</span> options: <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a></h5>
+												<div class="tsd-comment tsd-typography">
+													<p>Options for the created instance.</p>
+												</div>
+											</li>
+											<li>
+												<h5>isDocument: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+												<div class="tsd-comment tsd-typography">
+													<p>Allows parser to be switched to fragment mode.</p>
+												</div>
+											</li>
+										</ul>
+										<h4 class="tsd-returns-title">Returns <a href="CheerioAPI.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioAPI</a></h4>
+										<p>The loaded document.</p>
+									</li>
+								</ul>
+							</li>
+						</ul>
 					</div>
 				</section>
 			</section>
@@ -251,7 +308,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.contains</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L230">src/static.ts:230</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L212">src/static.ts:212</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -293,14 +350,14 @@
 					<h3>html</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 						<li class="tsd-signature tsd-kind-icon">html<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">?: </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
-						<li class="tsd-signature tsd-kind-icon">html<span class="tsd-signature-symbol">(</span>dom<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayLike</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a>, options<span class="tsd-signature-symbol">?: </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						<li class="tsd-signature tsd-kind-icon">html<span class="tsd-signature-symbol">(</span>dom<span class="tsd-signature-symbol">?: </span><a href="../modules.html#BasicAcceptedElems" class="tsd-signature-type" data-tsd-kind="Type alias">BasicAcceptedElems</a><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span>, options<span class="tsd-signature-symbol">?: </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.html</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L63">src/static.ts:63</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L55">src/static.ts:55</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -324,7 +381,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.html</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L71">src/static.ts:71</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L63">src/static.ts:63</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -335,7 +392,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> dom: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayLike</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> dom: <a href="../modules.html#BasicAcceptedElems" class="tsd-signature-type" data-tsd-kind="Type alias">BasicAcceptedElems</a><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>Element to render.</p>
 									</div>
@@ -352,59 +409,6 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
-					<a name="load" class="tsd-anchor"></a>
-					<h3>load</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">load<span class="tsd-signature-symbol">(</span>content<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span>, options<span class="tsd-signature-symbol">?: </span><a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span>, isDocument<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="CheerioAPI.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioAPI</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<p>Inherited from LoadType.load</p>
-								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/load.ts#L88">src/load.ts:88</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Create a querying function, bound to a document created from the provided
-										markup. Note that similar to web browser contexts, this operation may
-										introduce <code>&lt;html&gt;</code>, <code>&lt;head&gt;</code>, and <code>&lt;body&gt;</code> elements; set <code>isDocument</code> to
-									<code>false</code> to switch to fragment mode and disable this.</p>
-								</div>
-								<dl class="tsd-comment-tags">
-									<dt>see</dt>
-									<dd><p><a href="https://cheerio.js.org#loading" class="external">https://cheerio.js.org#loading</a> for additional usage information.</p>
-									</dd>
-								</dl>
-							</div>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>content: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Buffer</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Markup to be loaded.</p>
-									</div>
-								</li>
-								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> options: <a href="CheerioOptions.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioOptions</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Options for the created instance.</p>
-									</div>
-								</li>
-								<li>
-									<h5>isDocument: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>Allows parser to be switched to fragment mode.</p>
-									</div>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="CheerioAPI.html" class="tsd-signature-type" data-tsd-kind="Interface">CheerioAPI</a></h4>
-							<p>The loaded document.</p>
-						</li>
-					</ul>
-				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited">
 					<a name="merge" class="tsd-anchor"></a>
 					<h3>merge</h3>
@@ -416,7 +420,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.merge</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L265">src/static.ts:265</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L247">src/static.ts:247</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -470,7 +474,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.parseHTML</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L166">src/static.ts:166</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L148">src/static.ts:148</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -516,7 +520,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.parseHTML</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L172">src/static.ts:172</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L154">src/static.ts:154</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -540,7 +544,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.root</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L216">src/static.ts:216</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L198">src/static.ts:198</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -575,7 +579,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.text</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L130">src/static.ts:130</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L112">src/static.ts:112</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -601,14 +605,14 @@
 					<a name="xml" class="tsd-anchor"></a>
 					<h3>xml</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
-						<li class="tsd-signature tsd-kind-icon">xml<span class="tsd-signature-symbol">(</span>dom<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayLike</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+						<li class="tsd-signature tsd-kind-icon">xml<span class="tsd-signature-symbol">(</span>dom<span class="tsd-signature-symbol">?: </span><a href="../modules.html#BasicAcceptedElems" class="tsd-signature-type" data-tsd-kind="Type alias">BasicAcceptedElems</a><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from StaticType.xml</p>
 								<ul>
-									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/e4b9369/src/static.ts#L115">src/static.ts:115</a></li>
+									<li>Defined in <a href="https://github.com/cheeriojs/cheerio/blob/efcba05/src/static.ts#L100">src/static.ts:100</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -619,7 +623,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> dom: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">ArrayLike</span><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> dom: <a href="../modules.html#BasicAcceptedElems" class="tsd-signature-type" data-tsd-kind="Type alias">BasicAcceptedElems</a><span class="tsd-signature-symbol">&lt;</span><a href="../classes/Node.html" class="tsd-signature-type" data-tsd-kind="Class">Node</a><span class="tsd-signature-symbol">&gt;</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>Element to render.</p>
 									</div>
@@ -671,14 +675,14 @@
 							<li class=" tsd-kind-property tsd-parent-kind-interface">
 								<a href="CheerioAPI.html#fn" class="tsd-kind-icon">fn</a>
 							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="CheerioAPI.html#load" class="tsd-kind-icon">load</a>
+							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 								<a href="CheerioAPI.html#contains" class="tsd-kind-icon">contains</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 								<a href="CheerioAPI.html#html" class="tsd-kind-icon">html</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
-								<a href="CheerioAPI.html#load" class="tsd-kind-icon">load</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-interface tsd-has-type-parameter tsd-is-inherited">
 								<a href="CheerioAPI.html#merge" class="tsd-kind-icon">merge</a>
@@ -755,10 +759,11 @@
 				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 			</ul>
 		</div>
 	</div>

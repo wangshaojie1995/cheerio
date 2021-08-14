@@ -165,6 +165,11 @@
 </code></pre>
 				<p>For a full list of options and their effects, see <a href="https://github.com/fb55/DomHandler">domhandler</a> and
 				<a href="https://github.com/fb55/htmlparser2/wiki/Parser-options">htmlparser2&#39;s options</a>.</p>
+				<a href="#using-htmlparser2" id="using-htmlparser2" style="color: inherit; text-decoration: none;">
+					<h4>Using <code>htmlparser2</code></h4>
+				</a>
+				<p>Cheerio ships with two parsers, <code>parse5</code> and <code>htmlparser2</code>. The
+				former is the default for HTML, the latter the default for XML.</p>
 				<p>Some users may wish to parse markup with the <code>htmlparser2</code> library, and
 					traverse/manipulate the resulting structure with Cheerio. This may be the case
 					for those upgrading from pre-1.0 releases of Cheerio (which relied on
@@ -182,6 +187,10 @@
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">dom</span><span style="color: #000000"> = </span><span style="color: #001080">htmlparser2</span><span style="color: #000000">.</span><span style="color: #795E26">parseDocument</span><span style="color: #000000">(</span><span style="color: #001080">document</span><span style="color: #000000">, </span><span style="color: #001080">options</span><span style="color: #000000">);</span>
 
 <span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000">(</span><span style="color: #001080">dom</span><span style="color: #000000">);</span>
+</code></pre>
+				<p>If you want to save some bytes, you can use Cheerio&#39;s <em>slim</em> export, which
+				always uses <code>htmlparser2</code>:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cheerio</span><span style="color: #000000"> = </span><span style="color: #795E26">require</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;cheerio/lib/slim&#039;</span><span style="color: #000000">);</span>
 </code></pre>
 				<a href="#selectors" id="selectors" style="color: inherit; text-decoration: none;">
 					<h3>Selectors</h3>
@@ -227,15 +236,6 @@
 				<pre><code class="language-js"><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">html</span><span style="color: #000000">(</span><span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;.pear&#039;</span><span style="color: #000000">));</span>
 <span style="color: #008000">//=&gt; &lt;li class=&quot;pear&quot;&gt;Pear&lt;/li&gt;</span>
 </code></pre>
-				<p>By default, <code>html</code> will leave some tags open. Sometimes you may instead want to render a valid XML document. For example, you might parse the following XML snippet:</p>
-				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000">(</span>
-<span style="color: #000000">  </span><span style="color: #A31515">&#039;&lt;media:thumbnail url=&quot;http://www.foo.com/keyframe.jpg&quot; width=&quot;75&quot; height=&quot;50&quot; time=&quot;12:05:01.123&quot;/&gt;&#039;</span>
-<span style="color: #000000">);</span>
-</code></pre>
-				<p>... and later want to render to XML. To do this, you can use the &#39;xml&#39; utility function:</p>
-				<pre><code class="language-js"><span style="color: #001080">$</span><span style="color: #000000">.</span><span style="color: #795E26">xml</span><span style="color: #000000">();</span>
-<span style="color: #008000">//=&gt; &lt;media:thumbnail url=&quot;http://www.foo.com/keyframe.jpg&quot; width=&quot;75&quot; height=&quot;50&quot; time=&quot;12:05:01.123&quot;/&gt;</span>
-</code></pre>
 				<p>You may also render the text content of a Cheerio object using the <code>text</code> static method:</p>
 				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">$</span><span style="color: #000000"> = </span><span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">load</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;This is &lt;em&gt;content&lt;/em&gt;.&#039;</span><span style="color: #000000">);</span>
 <span style="color: #001080">cheerio</span><span style="color: #000000">.</span><span style="color: #795E26">text</span><span style="color: #000000">(</span><span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;body&#039;</span><span style="color: #000000">));</span>
@@ -252,7 +252,7 @@
 
 <span style="color: #795E26">$</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;body&#039;</span><span style="color: #000000">).</span><span style="color: #795E26">logHtml</span><span style="color: #000000">(); </span><span style="color: #008000">// logs &quot;Hello, &lt;b&gt;world&lt;/b&gt;!&quot; to the console</span>
 </code></pre>
-				<p>If you&#39;re using TypeScript, you should also add a type definition for your new method:</p>
+				<p>If you&#39;re using TypeScript, you should add a type definition for your new method:</p>
 				<pre><code class="language-ts"><span style="color: #0000FF">declare</span><span style="color: #000000"> </span><span style="color: #0000FF">module</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;cheerio&#039;</span><span style="color: #000000"> {</span>
 <span style="color: #000000">  </span><span style="color: #0000FF">interface</span><span style="color: #000000"> </span><span style="color: #267F99">Cheerio</span><span style="color: #000000">&lt;</span><span style="color: #267F99">T</span><span style="color: #000000">&gt; {</span>
 <span style="color: #000000">    </span><span style="color: #795E26">logHtml</span><span style="color: #000000">(</span><span style="color: #0000FF">this</span><span style="color: #000000">: </span><span style="color: #267F99">Cheerio</span><span style="color: #000000">&lt;</span><span style="color: #267F99">T</span><span style="color: #000000">&gt;): </span><span style="color: #267F99">void</span><span style="color: #000000">;</span>
@@ -426,10 +426,11 @@
 				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
 			</ul>
 			<ul class="tsd-legend">
-				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 			</ul>
 		</div>
 	</div>
