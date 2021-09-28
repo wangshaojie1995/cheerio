@@ -46,7 +46,7 @@ Cheerio wraps around <a href="https://github.com/inikulin/parse5">parse5</a> par
 <a href="#cheerio-is-not-a-web-browser" id="cheerio-is-not-a-web-browser" style="color: inherit; text-decoration: none;">
   <h2>Cheerio is not a web browser</h2>
 </a>
-<p>Cheerio parses markup and provides an API for traversing/manipulating the resulting data structure. It does not interpret the result as a web browser does. Specifically, it does <em>not</em> produce a visual rendering, apply CSS, load external resources, or execute JavaScript. This makes Cheerio <strong>much, much faster than other solutions</strong>. If your use case requires any of this functionality, you should consider projects like <a href="https://github.com/puppeteer/puppeteer">Puppeteer</a> or <a href="https://github.com/jsdom/jsdom">JSDom</a>.</p>
+<p>Cheerio parses markup and provides an API for traversing/manipulating the resulting data structure. It does not interpret the result as a web browser does. Specifically, it does <em>not</em> produce a visual rendering, apply CSS, load external resources, or execute JavaScript which is common for a SPA (single page application). This makes Cheerio <strong>much, much faster than other solutions</strong>. If your use case requires any of this functionality, you should consider browser automation software like <a href="https://github.com/puppeteer/puppeteer">Puppeteer</a> and <a href="https://github.com/microsoft/playwright">Playwright</a> or DOM emulation projects like <a href="https://github.com/jsdom/jsdom">JSDom</a>.</p>
 
 <a href="#api" id="api" style="color: inherit; text-decoration: none;">
   <h2>API</h2>
