@@ -1,4 +1,4 @@
-import cheerio from '.';
+import cheerio from './index.js';
 
 describe('.load', () => {
   it('(html) : should retain original root after creating a new node', () => {
@@ -15,13 +15,6 @@ describe('.load', () => {
     expect($.html()).toBe('<body><ul id="fruits"/></body>');
   });
 
-  it('(html) : should handle the `normalizeWhitepace` option', () => {
-    const $ = cheerio.load('<body><b>foo</b>  <b>bar</b></body>', {
-      xml: { normalizeWhitespace: true },
-    });
-    expect($.html()).toBe('<body><b>foo</b> <b>bar</b></body>');
-  });
-
   it('(html) : should handle xml tag option', () => {
     const $ = cheerio.load('<body><script><foo></script></body>', {
       xml: true,
@@ -31,7 +24,7 @@ describe('.load', () => {
 
   it('(buffer) : should accept a buffer', () => {
     const html = '<html><head></head><body>foo</body></html>';
-    // eslint-disable-next-line node/no-unsupported-features/node-builtins
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     const $html = cheerio.load(Buffer.from(html));
     expect($html.html()).toBe(html);
   });

@@ -1,6 +1,5 @@
-import type { Node } from 'domhandler';
-import type { Cheerio } from '../cheerio';
-import { isTag } from '../utils';
+import { isTag, type AnyNode } from 'domhandler';
+import type { Cheerio } from '../cheerio.js';
 
 /*
  * https://github.com/jquery/jquery/blob/2.1.3/src/manipulation/var/rcheckableType.js
@@ -14,26 +13,28 @@ const rCRLF = /\r?\n/g;
  * Encode a set of form elements as a string for submission.
  *
  * @category Forms
+ * @example
+ *
+ * ```js
+ * $('<form><input name="foo" value="bar" /></form>').serialize();
+ * //=> 'foo=bar'
+ * ```
+ *
  * @returns The serialized form.
  * @see {@link https://api.jquery.com/serialize/}
  */
-export function serialize<T extends Node>(this: Cheerio<T>): string {
+export function serialize<T extends AnyNode>(this: Cheerio<T>): string {
   // Convert form elements into name/value objects
   const arr = this.serializeArray();
 
   // Serialize each element into a key/value string
   const retArr = arr.map(
     (data) =>
-      `${encodeURIComponent(data.name)}=${encodeURIComponent(data.value)}`
+      `${encodeURIComponent(data.name)}=${encodeURIComponent(data.value)}`,
   );
 
   // Return the resulting serialization
   return retArr.join('&').replace(r20, '+');
-}
-
-interface SerializedField {
-  name: string;
-  value: string;
 }
 
 /**
@@ -50,9 +51,12 @@ interface SerializedField {
  * @returns The serialized form.
  * @see {@link https://api.jquery.com/serializeArray/}
  */
-export function serializeArray<T extends Node>(
-  this: Cheerio<T>
-): SerializedField[] {
+export function serializeArray<T extends AnyNode>(
+  this: Cheerio<T>,
+): {
+  name: string;
+  value: string;
+}[] {
   // Resolve all form elements from either forms or collections of form elements
   return this.map((_, elem) => {
     const $elem = this._make(elem);
@@ -67,10 +71,16 @@ export function serializeArray<T extends Node>(
         // And cannot be clicked (`[type=submit]`) or are used in `x-www-form-urlencoded` (`[type=file]`)
         ':not(:submit, :button, :image, :reset, :file)' +
         // And are either checked/don't have a checkable state
-        ':matches([checked], :not(:checkbox, :radio))'
+        ':matches([checked], :not(:checkbox, :radio))',
       // Convert each of the elements to its value(s)
     )
-    .map<Node, SerializedField>((_, elem) => {
+    .map<
+      AnyNode,
+      {
+        name: string;
+        value: string;
+      }
+    >((_, elem) => {
       const $elem = this._make(elem);
       const name = $elem.attr('name') as string; // We have filtered for elements with a name before.
       // If there is no value set (e.g. `undefined`, `null`), then default value to empty
@@ -83,7 +93,7 @@ export function serializeArray<T extends Node>(
            * We trim replace any line endings (e.g. `\r` or `\r\n` with `\r\n`) to guarantee consistency across platforms
            * These can occur inside of `<textarea>'s`
            */
-          ({ name, value: val.replace(rCRLF, '\r\n') })
+          ({ name, value: val.replace(rCRLF, '\r\n') }),
         );
       }
       // Otherwise (e.g. `<input type="text">`, return only one key/value pair

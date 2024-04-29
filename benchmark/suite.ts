@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Script } from 'node:vm';
 
-import { Suite, Event } from 'benchmark';
+import { Suite, type Event } from 'benchmark';
 import { JSDOM } from 'jsdom';
-import { Script } from 'vm';
-import cheerio from '../src';
+import cheerio from '../lib/index.js';
 
 const documentDir = path.join(__dirname, 'documents');
 const jQuerySrc = fs.readFileSync(
   path.join(__dirname, '../node_modules/jquery/dist/jquery.slim.js'),
-  'utf-8'
+  'utf8',
 );
 const jQueryScript = new Script(jQuerySrc);
 let filterRe = /./;
@@ -59,10 +59,10 @@ export default class Suites {
     });
 
     this._benchCheerio(suite, markup, options);
-    if (!cheerioOnly) {
-      this._benchJsDom(suite, markup, options);
-    } else {
+    if (cheerioOnly) {
       suite.run();
+    } else {
+      this._benchJsDom(suite, markup, options);
     }
   }
 
@@ -73,18 +73,16 @@ export default class Suites {
 
     jQueryScript.runInContext(dom.getInternalVMContext());
 
-    const setupData: T = options.setup(dom.window.$);
+    const setupData: T = options.setup(dom.window['$']);
 
-    suite.add('jsdom', () => {
-      testFn(dom.window.$, setupData);
-    });
+    suite.add('jsdom', () => testFn(dom.window['$'], setupData));
     suite.run();
   }
 
   _benchCheerio<T>(
     suite: Suite,
     markup: string,
-    options: SuiteOptions<T>
+    options: SuiteOptions<T>,
   ): void {
     const $ = cheerio.load(markup);
     const testFn = options.test;

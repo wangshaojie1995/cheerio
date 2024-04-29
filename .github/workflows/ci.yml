@@ -8,10 +8,16 @@ on:
 
 env:
   FORCE_COLOR: 2
-  NODE_COV: 16 # The Node.js version to run coveralls on
+  NODE_COV: lts/* # The Node.js version to run coveralls on
+
+permissions:
+  contents: read
 
 jobs:
   run:
+    permissions:
+      checks: write # for coverallsapp/github-action to create new checks
+      contents: read # for actions/checkout to fetch code
     name: Node ${{ matrix.node }}
     runs-on: ubuntu-latest
 
@@ -19,17 +25,17 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - 10
-          - 12
           - 14
           - 16
+          - 18
+          - lts/*
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4.0.2
         with:
           node-version: '${{ matrix.node }}'
           cache: 'npm'
@@ -46,7 +52,7 @@ jobs:
         if: matrix.node == env.NODE_COV
 
       - name: Run Coveralls
-        uses: coverallsapp/github-action@1.1.3
+        uses: coverallsapp/github-action@v2.2.3
         if: matrix.node == env.NODE_COV
         continue-on-error: true
         with:

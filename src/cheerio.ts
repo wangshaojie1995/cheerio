@@ -1,26 +1,49 @@
-import { InternalOptions } from './options';
-import type { Node, Document } from 'domhandler';
-import { BasicAcceptedElems } from './types';
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
+import type { InternalOptions } from './options.js';
+import type { AnyNode, Document, ParentNode } from 'domhandler';
+import type { BasicAcceptedElems } from './types.js';
 
-import * as Attributes from './api/attributes';
-import * as Traversing from './api/traversing';
-import * as Manipulation from './api/manipulation';
-import * as Css from './api/css';
-import * as Forms from './api/forms';
+import * as Attributes from './api/attributes.js';
+import * as Traversing from './api/traversing.js';
+import * as Manipulation from './api/manipulation.js';
+import * as Css from './api/css.js';
+import * as Forms from './api/forms.js';
+import * as Extract from './api/extract.js';
 
-type AttributesType = typeof Attributes;
-type TraversingType = typeof Traversing;
-type ManipulationType = typeof Manipulation;
-type CssType = typeof Css;
-type FormsType = typeof Forms;
+type MethodsType = typeof Attributes &
+  typeof Traversing &
+  typeof Manipulation &
+  typeof Css &
+  typeof Forms &
+  typeof Extract;
 
+/**
+ * The cheerio class is the central class of the library. It wraps a set of
+ * elements and provides an API for traversing, modifying, and interacting with
+ * the set.
+ *
+ * Loading a document will return the Cheerio class bound to the root element of
+ * the document. The class will be instantiated when querying the document (when
+ * calling `$('selector')`).
+ *
+ * @example This is the HTML markup we will be using in all of the API examples:
+ *
+ * ```html
+ * <ul id="fruits">
+ *   <li class="apple">Apple</li>
+ *   <li class="orange">Orange</li>
+ *   <li class="pear">Pear</li>
+ * </ul>
+ * ```
+ */
 export abstract class Cheerio<T> implements ArrayLike<T> {
   length = 0;
   [index: number]: T;
 
   options: InternalOptions;
   /**
-   * The root of the document. Can be set by using the `root` argument of the constructor.
+   * The root of the document. Can be set by using the `root` argument of the
+   * constructor.
    *
    * @private
    */
@@ -28,7 +51,7 @@ export abstract class Cheerio<T> implements ArrayLike<T> {
 
   /**
    * Instance of cheerio. Methods are specified in the modules. Usage of this
-   * constructor is not recommended. Please use $.load instead.
+   * constructor is not recommended. Please use `$.load` instead.
    *
    * @private
    * @param elements - The new selection.
@@ -38,7 +61,7 @@ export abstract class Cheerio<T> implements ArrayLike<T> {
   constructor(
     elements: ArrayLike<T> | undefined,
     root: Cheerio<Document> | null,
-    options: InternalOptions
+    options: InternalOptions,
   ) {
     this.options = options;
     this._root = root;
@@ -62,7 +85,7 @@ export abstract class Cheerio<T> implements ArrayLike<T> {
    */
   abstract _make<T>(
     dom: ArrayLike<T> | T | string,
-    context?: BasicAcceptedElems<Node>
+    context?: BasicAcceptedElems<AnyNode>,
   ): Cheerio<T>;
 
   /**
@@ -75,9 +98,10 @@ export abstract class Cheerio<T> implements ArrayLike<T> {
    * @returns A document containing the `content`.
    */
   abstract _parse(
-    content: string | Document | Node | Node[] | Buffer,
+    content: string | Document | AnyNode | AnyNode[] | Buffer,
     options: InternalOptions,
-    isDocument: boolean
+    isDocument: boolean,
+    context: ParentNode | null,
   ): Document;
 
   /**
@@ -87,19 +111,13 @@ export abstract class Cheerio<T> implements ArrayLike<T> {
    * @param dom - DOM to render.
    * @returns The rendered DOM.
    */
-  abstract _render(dom: Node | ArrayLike<Node>): string;
+  abstract _render(dom: AnyNode | ArrayLike<AnyNode>): string;
 }
 
-export interface Cheerio<T>
-  extends AttributesType,
-    TraversingType,
-    ManipulationType,
-    CssType,
-    FormsType,
-    Iterable<T> {
+export interface Cheerio<T> extends MethodsType, Iterable<T> {
   cheerio: '[cheerio object]';
 
-  splice: typeof Array.prototype.slice;
+  splice: typeof Array.prototype.splice;
 }
 
 /** Set a signature of the object. */
@@ -120,5 +138,6 @@ Object.assign(
   Traversing,
   Manipulation,
   Css,
-  Forms
+  Forms,
+  Extract,
 );

@@ -1,5 +1,5 @@
-import Suites from './suite';
-import type { Cheerio } from '../src/cheerio';
+import Suites from './suite'; // eslint-disable-line n/file-extension-in-import
+import type { Cheerio } from '../src/cheerio.js';
 import type { Element } from 'domhandler';
 
 const suites = new Suites();
@@ -40,7 +40,7 @@ suites.add<Cheerio<Element>>('manipulation - append', 'jquery.html', {
     return $('body');
   },
   test(_, $body) {
-    $body.append(new Array(50).join('<div>'));
+    $body.append('<div>'.repeat(50));
   },
 });
 
@@ -53,16 +53,16 @@ suites.add<Cheerio<Element>>(
       return $('body');
     },
     test(_, $body) {
-      $body.prepend(new Array(50).join('<div>'));
+      $body.prepend('<div>'.repeat(50));
     },
-  }
+  },
 );
 suites.add<Cheerio<Element>>('manipulation - after - highmem', 'jquery.html', {
   setup($) {
     return $('body');
   },
   test(_, $body) {
-    $body.after(new Array(50).join('<div>'));
+    $body.after('<div>'.repeat(50));
   },
 });
 suites.add<Cheerio<Element>>('manipulation - before - highmem', 'jquery.html', {
@@ -70,7 +70,7 @@ suites.add<Cheerio<Element>>('manipulation - before - highmem', 'jquery.html', {
     return $('body');
   },
   test(_, $body) {
-    $body.before(new Array(50).join('<div>'));
+    $body.before('<div>'.repeat(50));
   },
 });
 

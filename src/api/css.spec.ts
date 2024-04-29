@@ -1,7 +1,6 @@
-import cheerio from '..';
-import type { Cheerio } from '../cheerio';
+import cheerio, { load, type Cheerio } from '../index.js';
 import type { Element } from 'domhandler';
-import { mixedText } from '../__fixtures__/fixtures';
+import { mixedText } from '../__fixtures__/fixtures.js';
 
 describe('$(...)', () => {
   describe('.css', () => {
@@ -12,7 +11,7 @@ describe('$(...)', () => {
 
     it('([prop1, prop2]): should return the specified property values as an object', () => {
       const el = cheerio(
-        '<li style="margin: 1px; padding: 2px; color: blue;">'
+        '<li style="margin: 1px; padding: 2px; color: blue;">',
       );
       expect(el.css(['margin', 'color'])).toStrictEqual({
         margin: '1px',
@@ -28,13 +27,13 @@ describe('$(...)', () => {
     });
 
     it('(prop, val) : should skip text nodes', () => {
-      const $text = cheerio.load(mixedText);
+      const $text = load(mixedText);
       const $body = $text($text('body')[0].children);
 
       $body.css('test', 'value');
 
       expect($text('body').html()).toBe(
-        '<a style="test: value;">1</a>TEXT<b style="test: value;">2</b>'
+        '<a style="test: value;">1</a>TEXT<b style="test: value;">2</b>',
       );
     });
 
@@ -46,16 +45,16 @@ describe('$(...)', () => {
 
     it('(any, val): should ignore unsupported prop types', () => {
       const el = cheerio('<li style="padding: 1px;">');
-      el.css(123 as any, 'test');
+      el.css(123 as never, 'test');
       expect(el.attr('style')).toBe('padding: 1px;');
     });
 
     it('(prop): should not mangle embedded urls', () => {
       const el = cheerio(
-        '<li style="background-image:url(http://example.com/img.png);">'
+        '<li style="background-image:url(http://example.com/img.png);">',
       );
       expect(el.css('background-image')).toBe(
-        'url(http://example.com/img.png)'
+        'url(http://example.com/img.png)',
       );
     });
 
@@ -70,7 +69,7 @@ describe('$(...)', () => {
     });
 
     it('(prop): should return undefined for unmatched elements', () => {
-      const $ = cheerio.load('<li style="color:;position:absolute;">');
+      const $ = load('<li style="color:;position:absolute;">');
       expect($('ul').css('background-image')).toBeUndefined();
     });
 
@@ -82,9 +81,10 @@ describe('$(...)', () => {
     describe('(prop, function):', () => {
       let $el: Cheerio<Element>;
       beforeEach(() => {
-        $el = cheerio(
-          '<div style="margin: 0px;"></div><div style="margin: 1px;"></div><div style="margin: 2px;">'
-        ) as Cheerio<Element>;
+        const $ = load(
+          '<div style="margin: 0px;"></div><div style="margin: 1px;"></div><div style="margin: 2px;">',
+        );
+        $el = $('div');
       });
 
       it('should iterate over the selection', () => {
@@ -110,7 +110,7 @@ describe('$(...)', () => {
 
     it('(obj): should set each key and val', () => {
       const el = cheerio('<li style="padding: 0;"></li><li></li>');
-      el.css({ foo: 0 } as any);
+      el.css({ foo: 0 } as never);
       expect(el.eq(0).attr('style')).toBe('padding: 0; foo: 0;');
       expect(el.eq(1).attr('style')).toBe('foo: 0;');
     });
@@ -122,6 +122,15 @@ describe('$(...)', () => {
           one: '0',
           two: '1',
         });
+      });
+
+      it('should add malformed values to previous field (#1134)', () => {
+        const el = cheerio(
+          '<button style="background-image: url(data:image/png;base64,iVBORw0KGgo)"></button>',
+        );
+        expect(el.css('background-image')).toStrictEqual(
+          'url(data:image/png;base64,iVBORw0KGgo)',
+        );
       });
     });
   });

@@ -3,47 +3,49 @@
  *
  * @category Cheerio
  */
-export type { Cheerio } from './cheerio';
+export type { Cheerio } from './cheerio.js';
 
 /**
  * Types used in signatures of Cheerio methods.
  *
  * @category Cheerio
  */
-export * from './types';
+export * from './types.js';
 export type {
   CheerioOptions,
   HTMLParser2Options,
   Parse5Options,
-} from './options';
+} from './options.js';
 /**
  * Re-exporting all of the node types.
  *
  * @category DOM Node
  */
-export type { Node, NodeWithChildren, Element, Document } from 'domhandler';
+export type { Node, AnyNode, ParentNode, Element, Document } from 'domhandler';
 
-export type { CheerioAPI } from './load';
-import { getLoad } from './load';
-import { getParse } from './parse';
-import { renderWithParse5, parseWithParse5 } from './parsers/parse5-adapter';
+export type { CheerioAPI } from './load.js';
+import { getLoad } from './load.js';
+import { getParse } from './parse.js';
+import { renderWithParse5, parseWithParse5 } from './parsers/parse5-adapter.js';
 import renderWithHtmlparser2 from 'dom-serializer';
 import { parseDocument as parseWithHtmlparser2 } from 'htmlparser2';
 
-const parse = getParse((content, options, isDocument) =>
-  options.xmlMode || options._useHtmlParser2
+const parse = getParse((content, options, isDocument, context) =>
+  options._useHtmlParser2
     ? parseWithHtmlparser2(content, options)
-    : parseWithParse5(content, options, isDocument)
+    : parseWithParse5(content, options, isDocument, context),
 );
 
 // Duplicate docs due to https://github.com/TypeStrong/typedoc/issues/1616
 /**
- * Create a querying function, bound to a document created from the provided markup.
+ * Create a querying function, bound to a document created from the provided
+ * markup.
  *
  * Note that similar to web browser contexts, this operation may introduce
  * `<html>`, `<head>`, and `<body>` elements; set `isDocument` to `false` to
  * switch to fragment mode and disable this.
  *
+ * @category Loading
  * @param content - Markup to be loaded.
  * @param options - Options for the created instance.
  * @param isDocument - Allows parser to be switched to fragment mode.
@@ -51,83 +53,78 @@ const parse = getParse((content, options, isDocument) =>
  * @see {@link https://cheerio.js.org#loading} for additional usage information.
  */
 export const load = getLoad(parse, (dom, options) =>
-  options.xmlMode || options._useHtmlParser2
+  options._useHtmlParser2
     ? renderWithHtmlparser2(dom, options)
-    : renderWithParse5(dom)
+    : renderWithParse5(dom),
 );
+
+const defaultInstance = load([]);
 
 /**
  * The default cheerio instance.
  *
- * @deprecated Use the function returned by `load` instead.
+ * @deprecated Use the function returned by `load` instead. To access load, make
+ *   sure you are importing `* as cheerio` instead of this default export.
+ * @category Deprecated
  */
-export default load([]);
+export default defaultInstance;
 
-import { filters, pseudos, aliases } from 'cheerio-select';
+import * as staticMethods from './static.js';
+import type { BasicAcceptedElems } from './types.js';
+import type { CheerioOptions } from './options.js';
+import type { AnyNode } from 'domhandler';
+
+export const { contains, merge } = staticMethods;
 
 /**
- * Extension points for adding custom pseudo selectors.
+ * Renders the document.
  *
- * @example <caption>Adds a custom pseudo selector `:classic`, which matches
- * some fun HTML elements that are no more.</caption>
- *
- * ```js
- * import { load, select } from 'cheerio';
- *
- * // Aliases are short hands for longer HTML selectors
- * select.aliases.classic = 'marquee,blink';
- *
- * const $ = load(doc);
- * $(':classic').html();
- * ```
+ * @deprecated Use `html` on the loaded instance instead.
+ * @category Deprecated
+ * @param dom - Element to render.
+ * @param options - Options for the renderer.
+ * @returns The rendered document.
  */
-export const select = { filters, pseudos, aliases };
-
-import * as staticMethods from './static';
+export const html: (
+  dom: BasicAcceptedElems<AnyNode>,
+  options?: CheerioOptions,
+) => string = staticMethods.html.bind(defaultInstance);
 
 /**
- * In order to promote consistency with the jQuery library, users are encouraged
- * to instead use the static method of the same name.
+ * Render the document as XML.
  *
- * @deprecated
- * @example
- *
- * ```js
- * const $ = cheerio.load('<div><p></p></div>');
- *
- * $.contains($('div').get(0), $('p').get(0));
- * //=> true
- *
- * $.contains($('p').get(0), $('div').get(0));
- * //=> false
- * ```
- *
- * @returns {boolean}
+ * @deprecated Use `xml` on the loaded instance instead.
+ * @category Deprecated
+ * @param dom - Element to render.
+ * @returns The rendered document.
  */
-export const { contains } = staticMethods;
+export const xml: (dom: BasicAcceptedElems<AnyNode>) => string =
+  staticMethods.xml.bind(defaultInstance);
 
 /**
- * In order to promote consistency with the jQuery library, users are encouraged
- * to instead use the static method of the same name.
+ * Render the document as text.
  *
- * @deprecated
- * @example
+ * This returns the `textContent` of the passed elements. The result will
+ * include the contents of `<script>` and `<style>` elements. To avoid this, use
+ * `.prop('innerText')` instead.
  *
- * ```js
- * const $ = cheerio.load('');
- *
- * $.merge([1, 2], [3, 4]);
- * //=> [1, 2, 3, 4]
- * ```
+ * @deprecated Use `text` on the loaded instance instead.
+ * @category Deprecated
+ * @param elements - Elements to render.
+ * @returns The rendered document.
  */
-export const { merge } = staticMethods;
+export const text: (elements: ArrayLike<AnyNode>) => string =
+  staticMethods.text.bind(defaultInstance);
 
 /**
+ * The `.parseHTML` method exported by the Cheerio module is deprecated.
+ *
  * In order to promote consistency with the jQuery library, users are encouraged
  * to instead use the static method of the same name as it is defined on the
  * "loaded" Cheerio factory function.
  *
- * @deprecated See {@link static/parseHTML}.
+ * @deprecated Use `parseHTML` on the loaded instance instead.
+ * @category Deprecated
  * @example
  *
  * ```js
@@ -135,13 +132,16 @@ export const { merge } = staticMethods;
  * $.parseHTML('<b>markup</b>');
  * ```
  */
-export const { parseHTML } = staticMethods;
+export const parseHTML = staticMethods.parseHTML.bind(defaultInstance);
 
 /**
+ * The `.root` method exported by the Cheerio module is deprecated.
+ *
  * Users seeking to access the top-level element of a parsed document should
  * instead use the `root` static method of a "loaded" Cheerio function.
  *
- * @deprecated
+ * @deprecated Use `root` on the loaded instance instead.
+ * @category Deprecated
  * @example
  *
  * ```js
@@ -149,4 +149,4 @@ export const { parseHTML } = staticMethods;
  * $.root();
  * ```
  */
-export const { root } = staticMethods;
+export const root = staticMethods.root.bind(defaultInstance);

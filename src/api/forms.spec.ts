@@ -1,6 +1,5 @@
-import cheerio from '../../src';
-import type { CheerioAPI } from '../load';
-import { forms } from '../__fixtures__/fixtures';
+import cheerio, { type CheerioAPI } from '../index.js';
+import { forms } from '../__fixtures__/fixtures.js';
 
 describe('$(...)', () => {
   let $: CheerioAPI;
@@ -109,10 +108,10 @@ describe('$(...)', () => {
     it("() : shouldn't serialize the empty string", () => {
       expect($('<input value=pineapple>').serializeArray()).toStrictEqual([]);
       expect(
-        $('<input name="" value=pineapple>').serializeArray()
+        $('<input name="" value=pineapple>').serializeArray(),
       ).toStrictEqual([]);
       expect(
-        $('<input name="fruit" value=pineapple>').serializeArray()
+        $('<input name="fruit" value=pineapple>').serializeArray(),
       ).toStrictEqual([
         {
           name: 'fruit',

@@ -1,11 +1,12 @@
 # Contributing to Cheerio
 
-Thanks for your interest in contributing to the project! Here's a rundown of
-how we'd like to work with you:
+Thanks for your interest in contributing to the project! Here's a rundown of how
+we'd like to work with you:
 
 1.  File an issue on GitHub describing the contribution you'd like to make. This
     will help us to get you started on the right foot.
-2.  Create a single commit that addresses the issue:
+2.  Fork the project, and make your changes in a new branch based off of the
+    `main` branch:
     1.  Follow the project's code style (see below)
     2.  Add enough unit tests to "prove" that your patch is correct
     3.  Update the project documentation as needed (see below)
@@ -24,7 +25,8 @@ care to note aspects that make Cheerio distinct.
 
 Please make sure commit hooks are run, which will enforce the code style.
 
-When implementing private functionality that isn't part of the jQuery API, please opt for:
+When implementing private functionality that isn't part of the jQuery API,
+please opt for:
 
 - _Static methods_: If the functionality does not require a reference to a
   Cheerio instance, simply define a named function within the module it is

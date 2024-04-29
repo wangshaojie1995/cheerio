@@ -4,16 +4,26 @@
  * @module cheerio/manipulation
  */
 
-import { Node, NodeWithChildren, Element, Text, hasChildren } from 'domhandler';
-import { update as updateDOM } from '../parse';
-import { text as staticText } from '../static';
-import { domEach, cloneDom, isTag, isHtml, isCheerio } from '../utils';
+import {
+  isTag,
+  Text,
+  hasChildren,
+  cloneNode,
+  Document,
+  type ParentNode,
+  type AnyNode,
+  type Element,
+} from 'domhandler';
+import { update as updateDOM } from '../parse.js';
+import { text as staticText } from '../static.js';
+import { domEach, isHtml, isCheerio } from '../utils.js';
 import { removeElement } from 'domutils';
-import type { Cheerio } from '../cheerio';
-import type { BasicAcceptedElems, AcceptedElems } from '../types';
+import type { Cheerio } from '../cheerio.js';
+import type { BasicAcceptedElems, AcceptedElems } from '../types.js';
 
 /**
- * Create an array of nodes, recursing into arrays and parsing strings if necessary.
+ * Create an array of nodes, recursing into arrays and parsing strings if
+ * necessary.
  *
  * @private
  * @category Manipulation
@@ -21,50 +31,77 @@ import type { BasicAcceptedElems, AcceptedElems } from '../types';
  * @param clone - Optionally clone nodes.
  * @returns The array of nodes.
  */
-export function _makeDomArray<T extends Node>(
+export function _makeDomArray<T extends AnyNode>(
   this: Cheerio<T>,
-  elem?: BasicAcceptedElems<Node>,
-  clone?: boolean
-): Node[] {
+  elem?: BasicAcceptedElems<AnyNode> | BasicAcceptedElems<AnyNode>[],
+  clone?: boolean,
+): AnyNode[] {
   if (elem == null) {
     return [];
   }
-  if (isCheerio(elem)) {
-    return clone ? cloneDom(elem.get()) : elem.get();
-  }
-  if (Array.isArray(elem)) {
-    return elem.reduce<Node[]>(
-      (newElems, el) => newElems.concat(this._makeDomArray(el, clone)),
-      []
-    );
-  }
+
   if (typeof elem === 'string') {
-    return this._parse(elem, this.options, false).children;
+    return this._parse(elem, this.options, false, null).children.slice(0);
   }
-  return clone ? cloneDom([elem]) : [elem];
+
+  if ('length' in elem) {
+    if (elem.length === 1) {
+      return this._makeDomArray(elem[0], clone);
+    }
+
+    const result: AnyNode[] = [];
+
+    for (let i = 0; i < elem.length; i++) {
+      const el = elem[i];
+
+      if (typeof el === 'object') {
+        if (el == null) {
+          continue;
+        }
+
+        if (!('length' in el)) {
+          result.push(clone ? cloneNode(el, true) : el);
+          continue;
+        }
+      }
+
+      result.push(...this._makeDomArray(el, clone));
+    }
+
+    return result;
+  }
+
+  return [clone ? cloneNode(elem, true) : elem];
 }
 
 function _insert(
   concatenator: (
-    dom: Node[],
-    children: Node[],
-    parent: NodeWithChildren
-  ) => void
+    dom: AnyNode[],
+    children: AnyNode[],
+    parent: ParentNode,
+  ) => void,
 ) {
-  return function <T extends Node>(
+  return function <T extends AnyNode>(
     this: Cheerio<T>,
     ...elems:
-      | [(this: Node, i: number, html: string) => BasicAcceptedElems<Node>]
-      | BasicAcceptedElems<Node>[]
+      | [
+          (
+            this: AnyNode,
+            i: number,
+            html: string,
+          ) => BasicAcceptedElems<AnyNode>,
+        ]
+      | BasicAcceptedElems<AnyNode>[]
   ) {
     const lastIdx = this.length - 1;
 
     return domEach(this, (el, i) => {
       if (!hasChildren(el)) return;
+
       const domSrc =
         typeof elems[0] === 'function'
           ? elems[0].call(el, i, this._render(el.children))
-          : (elems as Node[]);
+          : (elems as BasicAcceptedElems<AnyNode>[]);
 
       const dom = this._makeDomArray(domSrc, i < lastIdx);
       concatenator(dom, el.children, el);
@@ -86,19 +123,22 @@ function _insert(
  * @returns The spliced array.
  */
 function uniqueSplice(
-  array: Node[],
+  array: AnyNode[],
   spliceIdx: number,
   spliceCount: number,
-  newElems: Node[],
-  parent: NodeWithChildren
-): Node[] {
+  newElems: AnyNode[],
+  parent: ParentNode,
+): AnyNode[] {
   const spliceArgs: Parameters<typeof Array.prototype.splice> = [
     spliceIdx,
     spliceCount,
     ...newElems,
   ];
-  const prev: Node | null = array[spliceIdx - 1] || null;
-  const next: Node | null = array[spliceIdx + spliceCount] || null;
+  const prev = spliceIdx === 0 ? null : array[spliceIdx - 1];
+  const next =
+    spliceIdx + spliceCount >= array.length
+      ? null
+      : array[spliceIdx + spliceCount];
 
   /*
    * Before splicing in new elements, ensure they do not already appear in the
@@ -109,7 +149,8 @@ function uniqueSplice(
     const oldParent = node.parent;
 
     if (oldParent) {
-      const prevIdx = oldParent.children.indexOf(newElems[idx]);
+      const oldSiblings: AnyNode[] = oldParent.children;
+      const prevIdx = oldSiblings.indexOf(node);
 
       if (prevIdx > -1) {
         oldParent.children.splice(prevIdx, 1);
@@ -129,8 +170,8 @@ function uniqueSplice(
       node.next.prev = node.prev ?? null;
     }
 
-    node.prev = newElems[idx - 1] || prev;
-    node.next = newElems[idx + 1] || next;
+    node.prev = idx === 0 ? prev : newElems[idx - 1];
+    node.next = idx === newElems.length - 1 ? next : newElems[idx + 1];
   }
 
   if (prev) {
@@ -163,11 +204,11 @@ function uniqueSplice(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/appendTo/}
  */
-export function appendTo<T extends Node>(
+export function appendTo<T extends AnyNode>(
   this: Cheerio<T>,
-  target: BasicAcceptedElems<Node>
+  target: BasicAcceptedElems<AnyNode>,
 ): Cheerio<T> {
-  const appendTarget = isCheerio(target) ? target : this._make(target);
+  const appendTarget = isCheerio<T>(target) ? target : this._make(target);
 
   appendTarget.append(this);
 
@@ -175,7 +216,8 @@ export function appendTo<T extends Node>(
 }
 
 /**
- * Insert every element in the set of matched elements to the beginning of the target.
+ * Insert every element in the set of matched elements to the beginning of the
+ * target.
  *
  * @category Manipulation
  * @example
@@ -195,11 +237,11 @@ export function appendTo<T extends Node>(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/prependTo/}
  */
-export function prependTo<T extends Node>(
+export function prependTo<T extends AnyNode>(
   this: Cheerio<T>,
-  target: BasicAcceptedElems<Node>
+  target: BasicAcceptedElems<AnyNode>,
 ): Cheerio<T> {
-  const prependTarget = isCheerio(target) ? target : this._make(target);
+  const prependTarget = isCheerio<T>(target) ? target : this._make(target);
 
   prependTarget.prepend(this);
 
@@ -207,7 +249,7 @@ export function prependTo<T extends Node>(
 }
 
 /**
- * Inserts content as the *last* child of each of the selected elements.
+ * Inserts content as the _last_ child of each of the selected elements.
  *
  * @category Manipulation
  * @example
@@ -230,7 +272,7 @@ export const append = _insert((dom, children, parent) => {
 });
 
 /**
- * Inserts content as the *first* child of each of the selected elements.
+ * Inserts content as the _first_ child of each of the selected elements.
  *
  * @category Manipulation
  * @example
@@ -254,14 +296,14 @@ export const prepend = _insert((dom, children, parent) => {
 
 function _wrap(
   insert: (
-    el: Node,
-    elInsertLocation: NodeWithChildren,
-    wrapperDom: NodeWithChildren[]
-  ) => void
+    el: AnyNode,
+    elInsertLocation: ParentNode,
+    wrapperDom: ParentNode[],
+  ) => void,
 ) {
-  return function <T extends Node>(
+  return function <T extends AnyNode>(
     this: Cheerio<T>,
-    wrapper: AcceptedElems<Node>
+    wrapper: AcceptedElems<AnyNode>,
   ) {
     const lastIdx = this.length - 1;
     const lastParent = this.parents().last();
@@ -273,8 +315,8 @@ function _wrap(
         typeof wrapper === 'function'
           ? wrapper.call(el, i, el)
           : typeof wrapper === 'string' && !isHtml(wrapper)
-          ? lastParent.find(wrapper).clone()
-          : wrapper;
+            ? lastParent.find(wrapper).clone()
+            : wrapper;
 
       const [wrapperDom] = this._makeDomArray(wrap, i < lastIdx);
 
@@ -344,7 +386,8 @@ function _wrap(
  * //   </ul>
  * ```
  *
- * @param wrapper - The DOM structure to wrap around each element in the selection.
+ * @param wrapper - The DOM structure to wrap around each element in the
+ *   selection.
  * @see {@link https://api.jquery.com/wrap/}
  */
 export const wrap = _wrap((el, elInsertLocation, wrapperDom) => {
@@ -352,7 +395,7 @@ export const wrap = _wrap((el, elInsertLocation, wrapperDom) => {
 
   if (!parent) return;
 
-  const siblings = parent.children;
+  const siblings: AnyNode[] = parent.children;
   const index = siblings.indexOf(el);
 
   updateDOM([el], elInsertLocation);
@@ -422,7 +465,7 @@ export const wrapInner = _wrap((el, elInsertLocation, wrapperDom) => {
  *
  * ```js
  * const $ = cheerio.load(
- *   '<div id=test>\n  <div><p>Hello</p></div>\n  <div><p>World</p></div>\n</div>'
+ *   '<div id=test>\n  <div><p>Hello</p></div>\n  <div><p>World</p></div>\n</div>',
  * );
  * $('#test p').unwrap();
  *
@@ -436,7 +479,7 @@ export const wrapInner = _wrap((el, elInsertLocation, wrapperDom) => {
  *
  * ```js
  * const $ = cheerio.load(
- *   '<div id=test>\n  <p>Hello</p>\n  <b><p>World</p></b>\n</div>'
+ *   '<div id=test>\n  <p>Hello</p>\n  <b><p>World</p></b>\n</div>',
  * );
  * $('#test p').unwrap('b');
  *
@@ -447,13 +490,14 @@ export const wrapInner = _wrap((el, elInsertLocation, wrapperDom) => {
  * ```
  *
  * @param selector - A selector to check the parent element against. If an
- *   element's parent does not match the selector, the element won't be unwrapped.
+ *   element's parent does not match the selector, the element won't be
+ *   unwrapped.
  * @returns The instance itself, for chaining.
  * @see {@link https://api.jquery.com/unwrap/}
  */
-export function unwrap<T extends Node>(
+export function unwrap<T extends AnyNode>(
   this: Cheerio<T>,
-  selector?: string
+  selector?: string,
 ): Cheerio<T> {
   this.parent(selector)
     .not('body')
@@ -475,7 +519,7 @@ export function unwrap<T extends Node>(
  *
  * ```js
  * const $ = cheerio.load(
- *   '<div class="container"><div class="inner">First</div><div class="inner">Second</div></div>'
+ *   '<div class="container"><div class="inner">First</div><div class="inner">Second</div></div>',
  * );
  * $('.inner').wrapAll("<div class='new'></div>");
  *
@@ -491,7 +535,7 @@ export function unwrap<T extends Node>(
  *
  * ```js
  * const $ = cheerio.load(
- *   '<span>Span 1</span><strong>Strong</strong><span>Span 2</span>'
+ *   '<span>Span 1</span><strong>Strong</strong><span>Span 2</span>',
  * );
  * const wrap = $('<div><p><em><b></b></em></p></div>');
  * $('span').wrapAll(wrap);
@@ -514,14 +558,14 @@ export function unwrap<T extends Node>(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/wrapAll/}
  */
-export function wrapAll<T extends Node>(
+export function wrapAll<T extends AnyNode>(
   this: Cheerio<T>,
-  wrapper: AcceptedElems<T>
+  wrapper: AcceptedElems<T>,
 ): Cheerio<T> {
   const el = this[0];
   if (el) {
-    const wrap: Cheerio<Node> = this._make(
-      typeof wrapper === 'function' ? wrapper.call(el, 0, el) : wrapper
+    const wrap: Cheerio<AnyNode> = this._make(
+      typeof wrapper === 'function' ? wrapper.call(el, 0, el) : wrapper,
     ).insertBefore(el);
 
     // If html is given as wrapper, wrap may contain text elements
@@ -552,8 +596,6 @@ export function wrapAll<T extends Node>(
   return this;
 }
 
-/* eslint-disable jsdoc/check-param-names*/
-
 /**
  * Insert content next to each element in the set of matched elements.
  *
@@ -571,26 +613,25 @@ export function wrapAll<T extends Node>(
  * //    </ul>
  * ```
  *
- * @param content - HTML string, DOM element, array of DOM elements or Cheerio
- *   to insert after each element in the set of matched elements.
+ * @param elems - HTML string, DOM element, array of DOM elements or Cheerio to
+ *   insert after each element in the set of matched elements.
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/after/}
  */
-export function after<T extends Node>(
+export function after<T extends AnyNode>(
   this: Cheerio<T>,
   ...elems:
-    | [(this: Node, i: number, html: string) => BasicAcceptedElems<Node>]
-    | BasicAcceptedElems<Node>[]
+    | [(this: AnyNode, i: number, html: string) => BasicAcceptedElems<AnyNode>]
+    | BasicAcceptedElems<AnyNode>[]
 ): Cheerio<T> {
   const lastIdx = this.length - 1;
 
   return domEach(this, (el, i) => {
-    const { parent } = el;
-    if (!hasChildren(el) || !parent) {
+    if (!hasChildren(el) || !el.parent) {
       return;
     }
 
-    const siblings = parent.children;
+    const siblings: AnyNode[] = el.parent.children;
     const index = siblings.indexOf(el);
 
     // If not found, move on
@@ -600,16 +641,14 @@ export function after<T extends Node>(
     const domSrc =
       typeof elems[0] === 'function'
         ? elems[0].call(el, i, this._render(el.children))
-        : (elems as Node[]);
+        : (elems as BasicAcceptedElems<AnyNode>[]);
 
     const dom = this._makeDomArray(domSrc, i < lastIdx);
 
     // Add element after `this` element
-    uniqueSplice(siblings, index + 1, 0, dom, parent);
+    uniqueSplice(siblings, index + 1, 0, dom, el.parent);
   });
 }
-
-/* eslint-enable jsdoc/check-param-names*/
 
 /**
  * Insert every element in the set of matched elements after the target.
@@ -632,41 +671,39 @@ export function after<T extends Node>(
  * @returns The set of newly inserted elements.
  * @see {@link https://api.jquery.com/insertAfter/}
  */
-export function insertAfter<T extends Node>(
+export function insertAfter<T extends AnyNode>(
   this: Cheerio<T>,
-  target: BasicAcceptedElems<Node>
+  target: BasicAcceptedElems<AnyNode>,
 ): Cheerio<T> {
   if (typeof target === 'string') {
-    target = this._make<Node>(target);
+    target = this._make<AnyNode>(target);
   }
 
   this.remove();
 
   const clones: T[] = [];
 
-  this._makeDomArray(target).forEach((el) => {
+  for (const el of this._makeDomArray(target)) {
     const clonedSelf = this.clone().toArray();
     const { parent } = el;
     if (!parent) {
-      return;
+      continue;
     }
 
-    const siblings = parent.children;
+    const siblings: AnyNode[] = parent.children;
     const index = siblings.indexOf(el);
 
     // If not found, move on
     /* istanbul ignore next */
-    if (index < 0) return;
+    if (index < 0) continue;
 
     // Add cloned `this` element(s) after target element
     uniqueSplice(siblings, index + 1, 0, clonedSelf, parent);
     clones.push(...clonedSelf);
-  });
+  }
 
   return this._make(clones);
 }
-
-/* eslint-disable jsdoc/check-param-names*/
 
 /**
  * Insert content previous to each element in the set of matched elements.
@@ -685,26 +722,25 @@ export function insertAfter<T extends Node>(
  * //    </ul>
  * ```
  *
- * @param content - HTML string, DOM element, array of DOM elements or Cheerio
- *   to insert before each element in the set of matched elements.
+ * @param elems - HTML string, DOM element, array of DOM elements or Cheerio to
+ *   insert before each element in the set of matched elements.
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/before/}
  */
-export function before<T extends Node>(
+export function before<T extends AnyNode>(
   this: Cheerio<T>,
   ...elems:
-    | [(this: Node, i: number, html: string) => BasicAcceptedElems<Node>]
-    | BasicAcceptedElems<Node>[]
+    | [(this: AnyNode, i: number, html: string) => BasicAcceptedElems<AnyNode>]
+    | BasicAcceptedElems<AnyNode>[]
 ): Cheerio<T> {
   const lastIdx = this.length - 1;
 
   return domEach(this, (el, i) => {
-    const { parent } = el;
-    if (!hasChildren(el) || !parent) {
+    if (!hasChildren(el) || !el.parent) {
       return;
     }
 
-    const siblings = parent.children;
+    const siblings: AnyNode[] = el.parent.children;
     const index = siblings.indexOf(el);
 
     // If not found, move on
@@ -714,16 +750,14 @@ export function before<T extends Node>(
     const domSrc =
       typeof elems[0] === 'function'
         ? elems[0].call(el, i, this._render(el.children))
-        : (elems as Node[]);
+        : (elems as BasicAcceptedElems<AnyNode>[]);
 
     const dom = this._makeDomArray(domSrc, i < lastIdx);
 
     // Add element before `el` element
-    uniqueSplice(siblings, index, 0, dom, parent);
+    uniqueSplice(siblings, index, 0, dom, el.parent);
   });
 }
-
-/* eslint-enable jsdoc/check-param-names*/
 
 /**
  * Insert every element in the set of matched elements before the target.
@@ -746,11 +780,11 @@ export function before<T extends Node>(
  * @returns The set of newly inserted elements.
  * @see {@link https://api.jquery.com/insertBefore/}
  */
-export function insertBefore<T extends Node>(
+export function insertBefore<T extends AnyNode>(
   this: Cheerio<T>,
-  target: BasicAcceptedElems<Node>
+  target: BasicAcceptedElems<AnyNode>,
 ): Cheerio<T> {
-  const targetArr = this._make<Node>(target);
+  const targetArr = this._make<AnyNode>(target);
 
   this.remove();
 
@@ -763,7 +797,7 @@ export function insertBefore<T extends Node>(
       return;
     }
 
-    const siblings = parent.children;
+    const siblings: AnyNode[] = parent.children;
     const index = siblings.indexOf(el);
 
     // If not found, move on
@@ -798,9 +832,9 @@ export function insertBefore<T extends Node>(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/remove/}
  */
-export function remove<T extends Node>(
+export function remove<T extends AnyNode>(
   this: Cheerio<T>,
-  selector?: string
+  selector?: string,
 ): Cheerio<T> {
   // Filter if we have selector
   const elems = selector ? this.filter(selector) : this;
@@ -834,9 +868,9 @@ export function remove<T extends Node>(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/replaceWith/}
  */
-export function replaceWith<T extends Node>(
+export function replaceWith<T extends AnyNode>(
   this: Cheerio<T>,
-  content: AcceptedElems<Node>
+  content: AcceptedElems<AnyNode>,
 ): Cheerio<T> {
   return domEach(this, (el, i) => {
     const { parent } = el;
@@ -844,7 +878,7 @@ export function replaceWith<T extends Node>(
       return;
     }
 
-    const siblings = parent.children;
+    const siblings: AnyNode[] = parent.children;
     const cont =
       typeof content === 'function' ? content.call(el, i, el) : content;
     const dom = this._makeDomArray(cont);
@@ -867,7 +901,8 @@ export function replaceWith<T extends Node>(
 }
 
 /**
- * Empties an element, removing all its children.
+ * Removes all children from each item in the selection. Text nodes and comment
+ * nodes are left as is.
  *
  * @category Manipulation
  * @example
@@ -881,20 +916,19 @@ export function replaceWith<T extends Node>(
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/empty/}
  */
-export function empty<T extends Node>(this: Cheerio<T>): Cheerio<T> {
+export function empty<T extends AnyNode>(this: Cheerio<T>): Cheerio<T> {
   return domEach(this, (el) => {
     if (!hasChildren(el)) return;
-    el.children.forEach((child) => {
+    for (const child of el.children) {
       child.next = child.prev = child.parent = null;
-    });
+    }
 
     el.children.length = 0;
   });
 }
 
 /**
- * Gets an HTML content string from the first selected element. If `htmlString`
- * is specified, each selected element's content is replaced by the new content.
+ * Gets an HTML content string from the first selected element.
  *
  * @category Manipulation
  * @example
@@ -907,18 +941,32 @@ export function empty<T extends Node>(this: Cheerio<T>): Cheerio<T> {
  * //=> <li class="mango">Mango</li>
  * ```
  *
- * @param str - If specified used to replace selection's contents.
+ * @returns The HTML content string.
+ * @see {@link https://api.jquery.com/html/}
+ */
+export function html<T extends AnyNode>(this: Cheerio<T>): string | null;
+/**
+ * Replaces each selected element's content with the specified content.
+ *
+ * @category Manipulation
+ * @example
+ *
+ * ```js
+ * $('.orange').html('<li class="mango">Mango</li>').html();
+ * //=> <li class="mango">Mango</li>
+ * ```
+ *
+ * @param str - The content to replace selection's contents with.
  * @returns The instance itself.
  * @see {@link https://api.jquery.com/html/}
  */
-export function html<T extends Node>(this: Cheerio<T>): string | null;
-export function html<T extends Node>(
+export function html<T extends AnyNode>(
   this: Cheerio<T>,
-  str: string | Cheerio<T>
+  str: string | Cheerio<T>,
 ): Cheerio<T>;
-export function html<T extends Node>(
+export function html<T extends AnyNode>(
   this: Cheerio<T>,
-  str?: string | Cheerio<Node>
+  str?: string | Cheerio<AnyNode>,
 ): Cheerio<T> | string | null {
   if (str === undefined) {
     const el = this[0];
@@ -926,20 +974,15 @@ export function html<T extends Node>(
     return this._render(el.children);
   }
 
-  // Keep main options unchanged
-  const opts = { ...this.options, context: null as NodeWithChildren | null };
-
   return domEach(this, (el) => {
     if (!hasChildren(el)) return;
-    el.children.forEach((child) => {
+    for (const child of el.children) {
       child.next = child.prev = child.parent = null;
-    });
-
-    opts.context = el;
+    }
 
     const content = isCheerio(str)
       ? str.toArray()
-      : this._parse(`${str}`, opts, false).children;
+      : this._parse(`${str}`, this.options, false, el).children;
 
     updateDOM(content, el);
   });
@@ -951,14 +994,13 @@ export function html<T extends Node>(
  * @category Manipulation
  * @returns The rendered document.
  */
-export function toString<T extends Node>(this: Cheerio<T>): string {
+export function toString<T extends AnyNode>(this: Cheerio<T>): string {
   return this._render(this);
 }
 
 /**
  * Get the combined text contents of each element in the set of matched
- * elements, including their descendants. If `textString` is specified, each
- * selected element's content is replaced by the new text content.
+ * elements, including their descendants.
  *
  * @category Manipulation
  * @example
@@ -973,18 +1015,33 @@ export function toString<T extends Node>(this: Cheerio<T>): string {
  * //    Pear
  * ```
  *
- * @param str - If specified replacement for the selected element's contents.
- * @returns The instance itself when setting text, otherwise the rendered document.
+ * @returns The text contents of the collection.
  * @see {@link https://api.jquery.com/text/}
  */
-export function text<T extends Node>(this: Cheerio<T>): string;
-export function text<T extends Node>(
+export function text<T extends AnyNode>(this: Cheerio<T>): string;
+/**
+ * Set the content of each element in the set of matched elements to the
+ * specified text.
+ *
+ * @category Manipulation
+ * @example
+ *
+ * ```js
+ * $('.orange').text('Orange');
+ * //=> <div class="orange">Orange</div>
+ * ```
+ *
+ * @param str - The text to set as the content of each matched element.
+ * @returns The instance itself.
+ * @see {@link https://api.jquery.com/text/}
+ */
+export function text<T extends AnyNode>(
   this: Cheerio<T>,
-  str: string | ((this: Node, i: number, text: string) => string)
+  str: string | ((this: AnyNode, i: number, text: string) => string),
 ): Cheerio<T>;
-export function text<T extends Node>(
+export function text<T extends AnyNode>(
   this: Cheerio<T>,
-  str?: string | ((this: Node, i: number, text: string) => string)
+  str?: string | ((this: AnyNode, i: number, text: string) => string),
 ): Cheerio<T> | string {
   // If `str` is undefined, act as a "getter"
   if (str === undefined) {
@@ -993,16 +1050,16 @@ export function text<T extends Node>(
   if (typeof str === 'function') {
     // Function support
     return domEach(this, (el, i) =>
-      this._make(el).text(str.call(el, i, staticText([el])))
+      this._make(el).text(str.call(el, i, staticText([el]))),
     );
   }
 
   // Append text node to each selected elements
   return domEach(this, (el) => {
     if (!hasChildren(el)) return;
-    el.children.forEach((child) => {
+    for (const child of el.children) {
       child.next = child.prev = child.parent = null;
-    });
+    }
 
     const textNode = new Text(`${str}`);
 
@@ -1023,6 +1080,16 @@ export function text<T extends Node>(
  * @returns The cloned object.
  * @see {@link https://api.jquery.com/clone/}
  */
-export function clone<T extends Node>(this: Cheerio<T>): Cheerio<T> {
-  return this._make(cloneDom(this.get()));
+export function clone<T extends AnyNode>(this: Cheerio<T>): Cheerio<T> {
+  const clone = Array.prototype.map.call(this.get(), (el) =>
+    cloneNode(el, true),
+  ) as T[];
+
+  // Add a root node around the cloned nodes
+  const root = new Document(clone);
+  for (const node of clone) {
+    node.parent = root;
+  }
+
+  return this._make(clone);
 }

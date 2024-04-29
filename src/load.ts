@@ -1,21 +1,21 @@
 import {
-  CheerioOptions,
-  InternalOptions,
-  default as defaultOptions,
-  flatten as flattenOptions,
-} from './options';
-import * as staticMethods from './static';
-import { Cheerio } from './cheerio';
-import { isHtml, isCheerio } from './utils';
-import type { Node, Document, Element } from 'domhandler';
-import { SelectorType, BasicAcceptedElems } from './types';
+  type CheerioOptions,
+  type InternalOptions,
+  flattenOptions,
+} from './options.js';
+import * as staticMethods from './static.js';
+import { Cheerio } from './cheerio.js';
+import { isHtml, isCheerio } from './utils.js';
+import type { AnyNode, Document, Element, ParentNode } from 'domhandler';
+import type { SelectorType, BasicAcceptedElems } from './types.js';
 
 type StaticType = typeof staticMethods;
 
 /**
  * A querying function, bound to a document created from the provided markup.
  *
- * Also provides several helper methods for dealing with the document as a whole.
+ * Also provides several helper methods for dealing with the document as a
+ * whole.
  */
 export interface CheerioAPI extends StaticType {
   /**
@@ -23,20 +23,38 @@ export interface CheerioAPI extends StaticType {
    * the document. Like jQuery, it's the primary method for selecting elements
    * in the document.
    *
-   * `selector` searches within the `context` scope which searches within the
+   * `selector` searches within the `context` scope, which searches within the
    * `root` scope.
    *
    * @example
    *
    * ```js
-   * $('.apple', '#fruits').text();
-   * //=> Apple
-   *
    * $('ul .pear').attr('class');
    * //=> pear
    *
    * $('li[class=orange]').html();
    * //=> Orange
+   *
+   * $('.apple', '#fruits').text();
+   * //=> Apple
+   * ```
+   *
+   * Optionally, you can also load HTML by passing the string as the selector:
+   *
+   * ```js
+   * $('<ul id="fruits">...</ul>');
+   * ```
+   *
+   * Or the context:
+   *
+   * ```js
+   * $('ul', '<ul id="fruits">...</ul>');
+   * ```
+   *
+   * Or as the root:
+   *
+   * ```js
+   * $('li', 'ul', '<ul id="fruits">...</ul>');
    * ```
    *
    * @param selector - Either a selector to look for within the document, or the
@@ -45,11 +63,11 @@ export interface CheerioAPI extends StaticType {
    *   contents of the document to query.
    * @param root - Optional HTML document string.
    */
-  <T extends Node, S extends string>(
+  <T extends AnyNode, S extends string>(
     selector?: S | BasicAcceptedElems<T>,
-    context?: BasicAcceptedElems<Node> | null,
+    context?: BasicAcceptedElems<AnyNode> | null,
     root?: BasicAcceptedElems<Document>,
-    options?: CheerioOptions
+    options?: CheerioOptions,
   ): Cheerio<S extends SelectorType ? Element : T>;
 
   /**
@@ -69,15 +87,32 @@ export interface CheerioAPI extends StaticType {
   /** Mimic jQuery's prototype alias for plugin authors. */
   fn: typeof Cheerio.prototype;
 
+  /**
+   * The `.load` static method defined on the "loaded" Cheerio factory function
+   * is deprecated. Users are encouraged to instead use the `load` function
+   * exported by the Cheerio module.
+   *
+   * @deprecated Use the `load` function exported by the Cheerio module.
+   * @category Deprecated
+   * @example
+   *
+   * ```js
+   * const $ = cheerio.load('<h1>Hello, <span>world</span>.</h1>');
+   * ```
+   */
   load: ReturnType<typeof getLoad>;
 }
 
 export function getLoad(
   parse: typeof Cheerio.prototype._parse,
-  render: (dom: Node | ArrayLike<Node>, options: InternalOptions) => string
+  render: (
+    dom: AnyNode | ArrayLike<AnyNode>,
+    options: InternalOptions,
+  ) => string,
 ) {
   /**
-   * Create a querying function, bound to a document created from the provided markup.
+   * Create a querying function, bound to a document created from the provided
+   * markup.
    *
    * Note that similar to web browser contexts, this operation may introduce
    * `<html>`, `<head>`, and `<body>` elements; set `isDocument` to `false` to
@@ -90,22 +125,25 @@ export function getLoad(
    * @see {@link https://cheerio.js.org#loading} for additional usage information.
    */
   return function load(
-    content: string | Node | Node[] | Buffer,
+    content: string | AnyNode | AnyNode[] | Buffer,
     options?: CheerioOptions | null,
-    isDocument = true
+    isDocument = true,
   ): CheerioAPI {
     if ((content as string | null) == null) {
       throw new Error('cheerio.load() expects a string');
     }
 
-    const internalOpts = { ...defaultOptions, ...flattenOptions(options) };
-    const initialRoot = parse(content, internalOpts, isDocument);
+    const internalOpts = flattenOptions(options);
+    const initialRoot = parse(content, internalOpts, isDocument, null);
 
-    /** Create an extended class here, so that extensions only live on one instance. */
+    /**
+     * Create an extended class here, so that extensions only live on one
+     * instance.
+     */
     class LoadedCheerio<T> extends Cheerio<T> {
       _make<T>(
         selector?: ArrayLike<T> | T | string,
-        context?: BasicAcceptedElems<Node> | null
+        context?: BasicAcceptedElems<AnyNode> | null,
       ): Cheerio<T> {
         const cheerio = initialize(selector, context);
         cheerio.prevObject = this;
@@ -114,39 +152,37 @@ export function getLoad(
       }
 
       _parse(
-        content: string | Document | Node | Node[] | Buffer,
+        content: string | Document | AnyNode | AnyNode[] | Buffer,
         options: InternalOptions,
-        isDocument: boolean
+        isDocument: boolean,
+        context: ParentNode | null,
       ) {
-        return parse(content, options, isDocument);
+        return parse(content, options, isDocument, context);
       }
 
-      _render(dom: Node | ArrayLike<Node>): string {
+      _render(dom: AnyNode | ArrayLike<AnyNode>): string {
         return render(dom, this.options);
       }
     }
 
-    function initialize<T = Node, S extends string = string>(
+    function initialize<T = AnyNode, S extends string = string>(
       selector?: ArrayLike<T> | T | S,
-      context?: BasicAcceptedElems<Node> | null,
+      context?: BasicAcceptedElems<AnyNode> | null,
       root: BasicAcceptedElems<Document> = initialRoot,
-      opts?: CheerioOptions
+      opts?: CheerioOptions,
     ): Cheerio<S extends SelectorType ? Element : T> {
       type Result = S extends SelectorType ? Element : T;
 
       // $($)
       if (selector && isCheerio<Result>(selector)) return selector;
 
-      const options = {
-        ...internalOpts,
-        ...flattenOptions(opts),
-      };
+      const options = flattenOptions(opts, internalOpts);
       const r =
         typeof root === 'string'
-          ? [parse(root, options, false)]
+          ? [parse(root, options, false, null)]
           : 'length' in root
-          ? root
-          : [root];
+            ? root
+            : [root];
       const rootInstance = isCheerio<Document>(r)
         ? r
         : new LoadedCheerio<Document>(r, null, options);
@@ -158,51 +194,53 @@ export function getLoad(
         return new LoadedCheerio<Result>(undefined, rootInstance, options);
       }
 
-      const elements: Node[] | undefined =
+      const elements: AnyNode[] | undefined =
         typeof selector === 'string' && isHtml(selector)
           ? // $(<html>)
-            parse(selector, options, false).children
+            parse(selector, options, false, null).children
           : isNode(selector)
-          ? // $(dom)
-            [selector]
-          : Array.isArray(selector)
-          ? // $([dom])
-            selector
-          : undefined;
+            ? // $(dom)
+              [selector]
+            : Array.isArray(selector)
+              ? // $([dom])
+                selector
+              : undefined;
 
       const instance = new LoadedCheerio(elements, rootInstance, options);
 
-      if (elements || !selector) {
+      if (elements) {
         return instance as any;
       }
 
-      if (typeof selector !== 'string') throw new Error('');
+      if (typeof selector !== 'string') {
+        throw new TypeError('Unexpected type of selector');
+      }
 
       // We know that our selector is a string now.
       let search = selector;
 
-      const searchContext: Cheerio<Node> | undefined = !context
+      const searchContext: Cheerio<AnyNode> | undefined = context
         ? // If we don't have a context, maybe we have a root, from loading
-          rootInstance
-        : typeof context === 'string'
-        ? isHtml(context)
-          ? // $('li', '<ul>...</ul>')
-            new LoadedCheerio<Document>(
-              [parse(context, options, false)],
-              rootInstance,
-              options
-            )
-          : // $('li', 'ul')
-            ((search = `${context} ${search}` as S), rootInstance)
-        : isCheerio<Node>(context)
-        ? // $('li', $)
-          context
-        : // $('li', node), $('li', [nodes])
-          new LoadedCheerio<Node>(
-            Array.isArray(context) ? context : [context],
-            rootInstance,
-            options
-          );
+          typeof context === 'string'
+          ? isHtml(context)
+            ? // $('li', '<ul>...</ul>')
+              new LoadedCheerio<Document>(
+                [parse(context, options, false, null)],
+                rootInstance,
+                options,
+              )
+            : // $('li', 'ul')
+              ((search = `${context} ${search}` as S), rootInstance)
+          : isCheerio<AnyNode>(context)
+            ? // $('li', $)
+              context
+            : // $('li', node), $('li', [nodes])
+              new LoadedCheerio<AnyNode>(
+                Array.isArray(context) ? context : [context],
+                rootInstance,
+                options,
+              )
+        : rootInstance;
 
       // If we still don't have a context, return
       if (!searchContext) return instance as any;
@@ -229,7 +267,7 @@ export function getLoad(
   };
 }
 
-function isNode(obj: any): obj is Node {
+function isNode(obj: any): obj is AnyNode {
   return (
     !!obj.name ||
     obj.type === 'root' ||

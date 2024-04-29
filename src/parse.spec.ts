@@ -1,14 +1,15 @@
 import type { Document, Element } from 'domhandler';
-import { getParse } from './parse';
-import defaultOpts from './options';
+import { getParse } from './parse.js';
 
 import { parseDocument as parseWithHtmlparser2 } from 'htmlparser2';
-import { parseWithParse5 } from './parsers/parse5-adapter';
+import { parseWithParse5 } from './parsers/parse5-adapter.js';
 
-const parse = getParse((content, options, isDocument) =>
-  options.xmlMode || options._useHtmlParser2
+const defaultOpts = { _useHtmlParser2: false };
+
+const parse = getParse((content, options, isDocument, context) =>
+  options._useHtmlParser2
     ? parseWithHtmlparser2(content, options)
-    : parseWithParse5(content, options, isDocument)
+    : parseWithParse5(content, options, isDocument, context),
 );
 
 // Tags
@@ -46,17 +47,29 @@ const styleEmpty = '<style></style>';
 // Directives
 const directive = '<!doctype html>';
 
+function rootTest(root: Document) {
+  expect(root).toHaveProperty('type', 'root');
+
+  expect(root.nextSibling).toBe(null);
+  expect(root.previousSibling).toBe(null);
+  expect(root.parentNode).toBe(null);
+
+  const child = root.childNodes[0];
+  expect(child.parentNode).toBe(root);
+}
+
 describe('parse', () => {
   describe('evaluate', () => {
     it(`should parse basic empty tags: ${basic}`, () => {
-      const [tag] = parse(basic, defaultOpts, true).children as Element[];
+      const [tag] = parse(basic, defaultOpts, true, null).children as Element[];
       expect(tag.type).toBe('tag');
       expect(tag.tagName).toBe('html');
       expect(tag.childNodes).toHaveLength(2);
     });
 
     it(`should handle sibling tags: ${siblings}`, () => {
-      const dom = parse(siblings, defaultOpts, false).children as Element[];
+      const dom = parse(siblings, defaultOpts, false, null)
+        .children as Element[];
       const [h2, p] = dom;
 
       expect(dom).toHaveLength(2);
@@ -65,14 +78,15 @@ describe('parse', () => {
     });
 
     it(`should handle single tags: ${single}`, () => {
-      const [tag] = parse(single, defaultOpts, false).children as Element[];
+      const [tag] = parse(single, defaultOpts, false, null)
+        .children as Element[];
       expect(tag.type).toBe('tag');
       expect(tag.tagName).toBe('br');
       expect(tag.childNodes).toHaveLength(0);
     });
 
     it(`should handle malformatted single tags: ${singleWrong}`, () => {
-      const [tag] = parse(singleWrong, defaultOpts, false)
+      const [tag] = parse(singleWrong, defaultOpts, false, null)
         .children as Element[];
       expect(tag.type).toBe('tag');
       expect(tag.tagName).toBe('br');
@@ -80,7 +94,8 @@ describe('parse', () => {
     });
 
     it(`should handle tags with children: ${children}`, () => {
-      const [tag] = parse(children, defaultOpts, true).children as Element[];
+      const [tag] = parse(children, defaultOpts, true, null)
+        .children as Element[];
       expect(tag.type).toBe('tag');
       expect(tag.tagName).toBe('html');
       expect(tag.childNodes).toBeTruthy();
@@ -89,103 +104,95 @@ describe('parse', () => {
     });
 
     it(`should handle tags with children: ${li}`, () => {
-      const [tag] = parse(li, defaultOpts, false).children as Element[];
+      const [tag] = parse(li, defaultOpts, false, null).children as Element[];
       expect(tag.childNodes).toHaveLength(1);
       expect(tag.childNodes[0]).toHaveProperty('data', 'Durian');
     });
 
     it(`should handle tags with attributes: ${attributes}`, () => {
-      const attrs = parse(attributes, defaultOpts, false)
+      const attrs = parse(attributes, defaultOpts, false, null)
         .children[0] as Element;
       expect(attrs.attribs).toBeTruthy();
-      expect(attrs.attribs.src).toBe('hello.png');
-      expect(attrs.attribs.alt).toBe('man waving');
+      expect(attrs.attribs).toHaveProperty('src', 'hello.png');
+      expect(attrs.attribs).toHaveProperty('alt', 'man waving');
     });
 
     it(`should handle value-less attributes: ${noValueAttribute}`, () => {
-      const attrs = parse(noValueAttribute, defaultOpts, false)
+      const attrs = parse(noValueAttribute, defaultOpts, false, null)
         .children[0] as Element;
       expect(attrs.attribs).toBeTruthy();
-      expect(attrs.attribs.disabled).toBe('');
+      expect(attrs.attribs).toHaveProperty('disabled', '');
     });
 
     it(`should handle comments: ${comment}`, () => {
-      const elem = parse(comment, defaultOpts, false).children[0];
+      const elem = parse(comment, defaultOpts, false, null).children[0];
       expect(elem.type).toBe('comment');
       expect(elem).toHaveProperty('data', ' sexy ');
     });
 
     it(`should handle conditional comments: ${conditional}`, () => {
-      const elem = parse(conditional, defaultOpts, false).children[0];
+      const elem = parse(conditional, defaultOpts, false, null).children[0];
       expect(elem.type).toBe('comment');
       expect(elem).toHaveProperty(
         'data',
-        conditional.replace('<!--', '').replace('-->', '')
+        conditional.replace('<!--', '').replace('-->', ''),
       );
     });
 
     it(`should handle text: ${text}`, () => {
-      const text_ = parse(text, defaultOpts, false).children[0];
+      const text_ = parse(text, defaultOpts, false, null).children[0];
       expect(text_.type).toBe('text');
       expect(text_).toHaveProperty('data', 'lorem ipsum');
     });
 
     it(`should handle script tags: ${script}`, () => {
-      const script_ = parse(script, defaultOpts, false).children[0] as Element;
+      const script_ = parse(script, defaultOpts, false, null)
+        .children[0] as Element;
       expect(script_.type).toBe('script');
       expect(script_.tagName).toBe('script');
-      expect(script_.attribs.type).toBe('text/javascript');
+      expect(script_.attribs).toHaveProperty('type', 'text/javascript');
       expect(script_.childNodes).toHaveLength(1);
       expect(script_.childNodes[0].type).toBe('text');
       expect(script_.childNodes[0]).toHaveProperty(
         'data',
-        'alert("hi world!");'
+        'alert("hi world!");',
       );
     });
 
     it(`should handle style tags: ${style}`, () => {
-      const style_ = parse(style, defaultOpts, false).children[0] as Element;
+      const style_ = parse(style, defaultOpts, false, null)
+        .children[0] as Element;
       expect(style_.type).toBe('style');
       expect(style_.tagName).toBe('style');
-      expect(style_.attribs.type).toBe('text/css');
+      expect(style_.attribs).toHaveProperty('type', 'text/css');
       expect(style_.childNodes).toHaveLength(1);
       expect(style_.childNodes[0].type).toBe('text');
       expect(style_.childNodes[0]).toHaveProperty(
         'data',
-        ' h2 { color:blue; } '
+        ' h2 { color:blue; } ',
       );
     });
 
     it(`should handle directives: ${directive}`, () => {
-      const elem = parse(directive, defaultOpts, true).children[0];
+      const elem = parse(directive, defaultOpts, true, null).children[0];
       expect(elem.type).toBe('directive');
-      expect(elem).toHaveProperty('data', '!DOCTYPE html ""');
-      expect(elem).toHaveProperty('tagName', '!doctype');
+      expect(elem).toHaveProperty('data', '!DOCTYPE html');
+      expect(elem).toHaveProperty('name', '!doctype');
     });
   });
 
   describe('.parse', () => {
     // Root test utility
-    function rootTest(root: Document) {
-      expect(root).toHaveProperty('tagName', 'root');
-
-      expect(root.nextSibling).toBe(null);
-      expect(root.previousSibling).toBe(null);
-      expect(root.parentNode).toBe(null);
-
-      const child = root.childNodes[0];
-      expect(child.parentNode).toBe(root);
-    }
 
     it(`should add root to: ${basic}`, () => {
-      const root = parse(basic, defaultOpts, true);
+      const root = parse(basic, defaultOpts, true, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
       expect(root.childNodes[0]).toHaveProperty('tagName', 'html');
     });
 
     it(`should add root to: ${siblings}`, () => {
-      const root = parse(siblings, defaultOpts, false);
+      const root = parse(siblings, defaultOpts, false, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(2);
       expect(root.childNodes[0]).toHaveProperty('tagName', 'h2');
@@ -194,43 +201,43 @@ describe('parse', () => {
     });
 
     it(`should add root to: ${comment}`, () => {
-      const root = parse(comment, defaultOpts, false);
+      const root = parse(comment, defaultOpts, false, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
       expect(root.childNodes[0].type).toBe('comment');
     });
 
     it(`should add root to: ${text}`, () => {
-      const root = parse(text, defaultOpts, false);
+      const root = parse(text, defaultOpts, false, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
       expect(root.childNodes[0].type).toBe('text');
     });
 
     it(`should add root to: ${scriptEmpty}`, () => {
-      const root = parse(scriptEmpty, defaultOpts, false);
+      const root = parse(scriptEmpty, defaultOpts, false, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
       expect(root.childNodes[0].type).toBe('script');
     });
 
     it(`should add root to: ${styleEmpty}`, () => {
-      const root = parse(styleEmpty, defaultOpts, false);
+      const root = parse(styleEmpty, defaultOpts, false, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
       expect(root.childNodes[0].type).toBe('style');
     });
 
     it(`should add root to: ${directive}`, () => {
-      const root = parse(directive, defaultOpts, true);
+      const root = parse(directive, defaultOpts, true, null);
       rootTest(root);
       expect(root.childNodes).toHaveLength(2);
       expect(root.childNodes[0].type).toBe('directive');
     });
 
     it('should simply return root', () => {
-      const oldroot = parse(basic, defaultOpts, true);
-      const root = parse(oldroot, defaultOpts, true);
+      const oldroot = parse(basic, defaultOpts, true, null);
+      const root = parse(oldroot, defaultOpts, true, null);
       expect(root).toBe(oldroot);
       rootTest(root);
       expect(root.childNodes).toHaveLength(1);
@@ -241,7 +248,8 @@ describe('parse', () => {
       const root = parse(
         '<div><a></a><span></span><p></p></div>',
         defaultOpts,
-        false
+        false,
+        null,
       ).childNodes[0] as Element;
       const childNodes = root.childNodes as Element[];
 
@@ -277,19 +285,19 @@ describe('parse', () => {
     });
 
     it('Should parse less than or equal sign sign', () => {
-      const root = parse('<i>A</i><=<i>B</i>', defaultOpts, false);
+      const root = parse('<i>A</i><=<i>B</i>', defaultOpts, false, null);
       const { childNodes } = root;
 
       expect(childNodes[0]).toHaveProperty('tagName', 'i');
       expect((childNodes[0] as Element).childNodes[0]).toHaveProperty(
         'data',
-        'A'
+        'A',
       );
       expect(childNodes[1]).toHaveProperty('data', '<=');
       expect(childNodes[2]).toHaveProperty('tagName', 'i');
       expect((childNodes[2] as Element).childNodes[0]).toHaveProperty(
         'data',
-        'B'
+        'B',
       );
     });
 
@@ -297,7 +305,8 @@ describe('parse', () => {
       const root = parse(
         '<a></a><script>foo //<![CDATA[ bar</script><b></b>',
         defaultOpts,
-        false
+        false,
+        null,
       );
       const childNodes = root.childNodes as Element[];
 
@@ -305,13 +314,13 @@ describe('parse', () => {
       expect(childNodes[1].tagName).toBe('script');
       expect(childNodes[1].childNodes[0]).toHaveProperty(
         'data',
-        'foo //<![CDATA[ bar'
+        'foo //<![CDATA[ bar',
       );
       expect(childNodes[2].tagName).toBe('b');
     });
 
     it('Should add <head> to documents', () => {
-      const root = parse('<html></html>', defaultOpts, true);
+      const root = parse('<html></html>', defaultOpts, true, null);
       const childNodes = root.childNodes as Element[];
 
       expect(childNodes[0].tagName).toBe('html');
@@ -322,7 +331,8 @@ describe('parse', () => {
       const root = parse(
         '<table><td>bar</td></tr></table>',
         defaultOpts,
-        false
+        false,
+        null,
       );
       const childNodes = root.childNodes as Element[];
 
@@ -331,19 +341,20 @@ describe('parse', () => {
       expect(childNodes[0].childNodes[0]).toHaveProperty('tagName', 'tbody');
       expect((childNodes[0] as any).childNodes[0].childNodes[0]).toHaveProperty(
         'tagName',
-        'tr'
+        'tr',
       );
       expect(
-        (childNodes[0] as any).childNodes[0].childNodes[0].childNodes[0].tagName
+        (childNodes[0] as any).childNodes[0].childNodes[0].childNodes[0]
+          .tagName,
       ).toBe('td');
       expect(
         (childNodes[0] as any).childNodes[0].childNodes[0].childNodes[0]
-          .childNodes[0].data
+          .childNodes[0].data,
       ).toBe('bar');
     });
 
     it('Should parse custom tag <line>', () => {
-      const root = parse('<line>test</line>', defaultOpts, false);
+      const root = parse('<line>test</line>', defaultOpts, false, null);
       const childNodes = root.childNodes as Element[];
 
       expect(childNodes.length).toBe(1);
@@ -355,20 +366,22 @@ describe('parse', () => {
       const root = parse(
         '<tr><td>i1</td></tr><tr><td>i2</td></td></tr><tr><td>i3</td></td></tr>',
         defaultOpts,
-        false
+        false,
+        null,
       );
       const childNodes = root.childNodes as Element[];
 
       expect(childNodes.length).toBe(3);
 
-      childNodes.forEach((child, i) => {
+      for (let i = 0; i < childNodes.length; i++) {
+        const child = childNodes[i];
         expect(child.tagName).toBe('tr');
         expect(child.childNodes[0]).toHaveProperty('tagName', 'td');
         expect((child.childNodes[0] as Element).childNodes[0]).toHaveProperty(
           'data',
-          `i${i + 1}`
+          `i${i + 1}`,
         );
-      });
+      }
     });
 
     it('Should correctly parse data url attributes', () => {
@@ -376,28 +389,28 @@ describe('parse', () => {
         '<div style=\'font-family:"butcherman-caps"; src:url(data:font/opentype;base64,AAEA...);\'></div>';
       const expectedAttr =
         'font-family:"butcherman-caps"; src:url(data:font/opentype;base64,AAEA...);';
-      const root = parse(html, defaultOpts, false);
+      const root = parse(html, defaultOpts, false, null);
       const childNodes = root.childNodes as Element[];
 
-      expect(childNodes[0].attribs.style).toBe(expectedAttr);
+      expect(childNodes[0].attribs).toHaveProperty('style', expectedAttr);
     });
 
     it('Should treat <xmp> tag content as text', () => {
-      const root = parse('<xmp><h2></xmp>', defaultOpts, false);
+      const root = parse('<xmp><h2></xmp>', defaultOpts, false, null);
       const childNodes = root.childNodes as Element[];
 
       expect(childNodes[0].childNodes[0]).toHaveProperty('data', '<h2>');
     });
 
     it('Should correctly parse malformed numbered entities', () => {
-      const root = parse('<p>z&#</p>', defaultOpts, false);
+      const root = parse('<p>z&#</p>', defaultOpts, false, null);
       const childNodes = root.childNodes as Element[];
 
       expect(childNodes[0].childNodes[0]).toHaveProperty('data', 'z&#');
     });
 
     it('Should correctly parse mismatched headings', () => {
-      const root = parse('<h2>Test</h3><div></div>', defaultOpts, false);
+      const root = parse('<h2>Test</h3><div></div>', defaultOpts, false, null);
       const { childNodes } = root;
 
       expect(childNodes.length).toBe(2);
@@ -409,7 +422,8 @@ describe('parse', () => {
       const root = parse(
         '<pre>\nA <- factor(A, levels = c("c","a","b"))\n</pre>',
         defaultOpts,
-        false
+        false,
+        null,
       );
       const childNodes = root.childNodes as Element[];
 
@@ -417,7 +431,7 @@ describe('parse', () => {
       expect(childNodes[0].tagName).toBe('pre');
       expect(childNodes[0].childNodes[0]).toHaveProperty(
         'data',
-        'A <- factor(A, levels = c("c","a","b"))\n'
+        'A <- factor(A, levels = c("c","a","b"))\n',
       );
     });
 
@@ -425,13 +439,13 @@ describe('parse', () => {
       const root = parse(
         '<p>Hello</p>',
         { ...defaultOpts, sourceCodeLocationInfo: true },
-        false
+        false,
+        null,
       );
-      // TODO Add `sourceCodeLocation` to domhandler
-      const location = (root.children[0] as any).sourceCodeLocation;
+      const location = root.children[0].sourceCodeLocation;
 
       expect(typeof location).toBe('object');
-      expect(location.endOffset).toBe(12);
+      expect(location?.endOffset).toBe(12);
     });
   });
 });

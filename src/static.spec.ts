@@ -1,12 +1,12 @@
-import * as fixtures from './__fixtures__/fixtures';
-import cheerio, { CheerioAPI } from '.';
+import * as fixtures from './__fixtures__/fixtures.js';
+import cheerio, { type CheerioAPI } from './index.js';
 
 describe('cheerio', () => {
   describe('.html', () => {
     it('() : should return innerHTML; $.html(obj) should return outerHTML', () => {
       const $div = cheerio(
         'div',
-        '<div><span>foo</span><span>bar</span></div>'
+        '<div><span>foo</span><span>bar</span></div>',
       );
       const span = $div.children()[1];
       expect(cheerio(span).html()).toBe('bar');
@@ -27,7 +27,7 @@ describe('cheerio', () => {
     it('(<root>) : does not render the root element', () => {
       const $ = cheerio.load('');
       expect(cheerio.html($.root())).toBe(
-        '<html><head></head><body></body></html>'
+        '<html><head></head><body></body></html>',
       );
     });
 
@@ -41,8 +41,8 @@ describe('cheerio', () => {
 
     it('() : does not crash with `null` as `this` value', () => {
       const { html } = cheerio;
-      expect(html.call(null as any)).toBe('');
-      expect(html.call(null as any, '#nothing')).toBe('');
+      expect(html.call(null as never)).toBe('');
+      expect(html.call(null as never, '#nothing')).toBe('');
     });
   });
 
@@ -54,53 +54,44 @@ describe('cheerio', () => {
 
     it('(cheerio object) : should omit comment nodes', () => {
       const $ = cheerio.load(
-        '<a>This is <!-- a comment --> not a comment.</a>'
+        '<a>This is <!-- a comment --> not a comment.</a>',
       );
       expect(cheerio.text($('a'))).toBe('This is  not a comment.');
     });
 
     it('(cheerio object) : should include text contents of children recursively', () => {
       const $ = cheerio.load(
-        '<a>This is <div>a child with <span>another child and <!-- a comment --> not a comment</span> followed by <em>one last child</em> and some final</div> text.</a>'
+        '<a>This is <div>a child with <span>another child and <!-- a comment --> not a comment</span> followed by <em>one last child</em> and some final</div> text.</a>',
       );
       expect(cheerio.text($('a'))).toBe(
-        'This is a child with another child and  not a comment followed by one last child and some final text.'
+        'This is a child with another child and  not a comment followed by one last child and some final text.',
       );
     });
 
     it('() : should return the rendered text content of the root', () => {
       const $ = cheerio.load(
-        '<a>This is <div>a child with <span>another child and <!-- a comment --> not a comment</span> followed by <em>one last child</em> and some final</div> text.</a>'
+        '<a>This is <div>a child with <span>another child and <!-- a comment --> not a comment</span> followed by <em>one last child</em> and some final</div> text.</a>',
       );
       expect(cheerio.text($.root())).toBe(
-        'This is a child with another child and  not a comment followed by one last child and some final text.'
+        'This is a child with another child and  not a comment followed by one last child and some final text.',
       );
     });
 
-    it('(cheerio object) : should omit script tags', () => {
+    it('(cheerio object) : should not omit script tags', () => {
       const $ = cheerio.load('<script>console.log("test")</script>');
-      expect(cheerio.text($.root())).toBe('');
+      expect(cheerio.text($.root())).toBe('console.log("test")');
     });
 
     it('(cheerio object) : should omit style tags', () => {
       const $ = cheerio.load(
-        '<style type="text/css">.cf-hidden { display: none; } .cf-invisible { visibility: hidden; }</style>'
+        '<style type="text/css">.cf-hidden { display: none; }</style>',
       );
-      expect($.text()).toBe('');
-    });
-
-    it('(cheerio object) : should include text contents of children omitting style and script tags', () => {
-      const $ = cheerio.load(
-        '<body>Welcome <div>Hello, testing text function,<script>console.log("hello")</script></div><style type="text/css">.cf-hidden { display: none; }</style>End of messege</body>'
-      );
-      expect(cheerio.text($.root())).toBe(
-        'Welcome Hello, testing text function,End of messege'
-      );
+      expect($.text()).toBe('.cf-hidden { display: none; }');
     });
 
     it('() : does not crash with `null` as `this` value', () => {
       const { text } = cheerio;
-      expect(text.call(null as any)).toBe('');
+      expect(text.call(null as never)).toBe('');
     });
   });
 
@@ -120,10 +111,10 @@ describe('cheerio', () => {
     });
 
     it('(largeHtmlString) : parses large HTML strings', () => {
-      const html = new Array(10).join('<div></div>');
+      const html = '<div></div>'.repeat(10);
       const nodes = $.parseHTML(html);
 
-      expect(nodes.length).toBeGreaterThan(4);
+      expect(nodes.length).toBe(10);
       expect(nodes).toBeInstanceOf(Array);
     });
 
@@ -170,7 +161,7 @@ describe('cheerio', () => {
 
     it('(garbageInput) : should not cause an error', () => {
       expect(
-        $.parseHTML('<#if><tr><p>This is a test.</p></tr><#/if>')
+        $.parseHTML('<#if><tr><p>This is a test.</p></tr><#/if>'),
       ).toBeTruthy();
     });
 
@@ -197,7 +188,7 @@ describe('cheerio', () => {
       const elems = $div.parseHTML(
         '<script>foo</script><a>',
         { foo: 123 },
-        true
+        true,
       );
 
       $div('div').append(elems);
@@ -208,46 +199,35 @@ describe('cheerio', () => {
 
   describe('.merge', () => {
     const $ = cheerio.load('');
-    let arr1: ArrayLike<number>;
-    let arr2: ArrayLike<number>;
-
-    beforeEach(() => {
-      arr1 = [1, 2, 3];
-      arr2 = [4, 5, 6];
-    });
 
     it('should be a function', () => {
       expect(typeof $.merge).toBe('function');
     });
 
-    it('(arraylike, arraylike) : should return an array', () => {
+    it('(arraylike, arraylike) : should modify the first array, but not the second', () => {
+      const arr1 = [1, 2, 3];
+      const arr2 = [4, 5, 6];
+
       const ret = $.merge(arr1, arr2);
       expect(typeof ret).toBe('object');
       expect(Array.isArray(ret)).toBe(true);
-    });
-
-    it('(arraylike, arraylike) : should modify the first array', () => {
-      $.merge(arr1, arr2);
+      expect(ret).toBe(arr1);
       expect(arr1).toHaveLength(6);
-    });
-
-    it('(arraylike, arraylike) : should not modify the second array', () => {
-      $.merge(arr1, arr2);
       expect(arr2).toHaveLength(3);
     });
 
     it('(arraylike, arraylike) : should handle objects that arent arrays, but are arraylike', () => {
       const arr1: ArrayLike<string> = {
         length: 3,
-        [0]: 'a',
-        [1]: 'b',
-        [2]: 'c',
+        0: 'a',
+        1: 'b',
+        2: 'c',
       };
       const arr2 = {
         length: 3,
-        [0]: 'd',
-        [1]: 'e',
-        [2]: 'f',
+        0: 'd',
+        1: 'e',
+        2: 'f',
       };
 
       $.merge(arr1, arr2);
@@ -259,21 +239,19 @@ describe('cheerio', () => {
     });
 
     it('(?, ?) : should gracefully reject invalid inputs', () => {
-      expect($.merge([4], 3 as any)).toBeFalsy();
-      expect($.merge({} as any, {} as any)).toBeFalsy();
-      expect($.merge([], {} as any)).toBeFalsy();
-      expect($.merge({} as any, [])).toBeFalsy();
-      const fakeArray1 = { length: 3, [0]: 'a', [1]: 'b', [3]: 'd' };
+      expect($.merge([4], 3 as never)).toBeFalsy();
+      expect($.merge({} as never, {} as never)).toBeFalsy();
+      expect($.merge([], {} as never)).toBeFalsy();
+      expect($.merge({} as never, [])).toBeFalsy();
+      const fakeArray1 = { length: 3, 0: 'a', 1: 'b', 3: 'd' };
       expect($.merge(fakeArray1, [])).toBeFalsy();
       expect($.merge([], fakeArray1)).toBeFalsy();
-      const fakeArray2 = { length: '7' };
-      expect($.merge(fakeArray2 as any, [])).toBeFalsy();
-      const fakeArray3 = { length: -1 };
-      expect($.merge(fakeArray3, [])).toBeFalsy();
+      expect($.merge({ length: '7' } as never, [])).toBeFalsy();
+      expect($.merge({ length: -1 }, [])).toBeFalsy();
     });
 
     it('(?, ?) : should no-op on invalid inputs', () => {
-      const fakeArray1 = { length: 3, [0]: 'a', [1]: 'b', [3]: 'd' };
+      const fakeArray1 = { length: 3, 0: 'a', 1: 'b', 3: 'd' };
       $.merge(fakeArray1, []);
       expect(fakeArray1).toHaveLength(3);
       expect(fakeArray1[0]).toBe('a');
@@ -321,8 +299,26 @@ describe('cheerio', () => {
       const $ = cheerio.load('<html><head></head><body>foo</body></html>');
       $.root().append('<div id="test"></div>');
       expect($.html()).toBe(
-        '<html><head></head><body>foo</body></html><div id="test"></div>'
+        '<html><head></head><body>foo</body></html><div id="test"></div>',
       );
+    });
+  });
+
+  describe('.extract', () => {
+    it('() : should extract values for selectors', () => {
+      const $ = cheerio.load(fixtures.eleven);
+
+      expect(
+        $.extract({
+          red: [{ selector: '.red', value: 'outerHTML' }],
+        }),
+      ).toStrictEqual({
+        red: [
+          '<li class="red">Four</li>',
+          '<li class="red">Five</li>',
+          '<li class="red sel">Nine</li>',
+        ],
+      });
     });
   });
 });
