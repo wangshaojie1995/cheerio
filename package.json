@@ -124,7 +124,7 @@
     "parse5": "^7.2.1",
     "parse5-htmlparser2-tree-adapter": "^7.1.0",
     "parse5-parser-stream": "^7.1.2",
-    "undici": "^6.20.1",
+    "undici": "^6.21.0",
     "whatwg-mimetype": "^4.0.0"
   },
   "devDependencies": {
@@ -135,7 +135,7 @@
     "@types/whatwg-mimetype": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
-    "@vitest/coverage-v8": "^2.1.4",
+    "@vitest/coverage-v8": "^2.1.5",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-expect-type": "^0.4.3",
