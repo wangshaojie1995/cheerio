@@ -16,9 +16,9 @@
     "lint:ts": "tsc --noEmit"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.6.0",
+    "@docusaurus/core": "^3.6.3",
     "@docusaurus/module-type-aliases": "^3.6.3",
-    "@docusaurus/plugin-client-redirects": "^3.6.2",
+    "@docusaurus/plugin-client-redirects": "^3.6.3",
     "@docusaurus/preset-classic": "^3.6.3",
     "@docusaurus/remark-plugin-npm2yarn": "^3.6.2",
     "@docusaurus/theme-live-codeblock": "^3.6.3",
@@ -33,7 +33,7 @@
     "typedoc-plugin-mdn-links": "^3.3.8"
   },
   "devDependencies": {
-    "@crowdin/cli": "^4.3.0",
+    "@crowdin/cli": "^4.4.0",
     "@tsconfig/docusaurus": "^2.0.3",
     "typescript": "^5.7.2"
   },
