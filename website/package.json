@@ -18,10 +18,10 @@
   "dependencies": {
     "@docusaurus/core": "^3.6.3",
     "@docusaurus/module-type-aliases": "^3.6.3",
-    "@docusaurus/plugin-client-redirects": "^3.6.3",
-    "@docusaurus/preset-classic": "^3.6.3",
+    "@docusaurus/plugin-client-redirects": "^3.7.0",
+    "@docusaurus/preset-classic": "^3.7.0",
     "@docusaurus/remark-plugin-npm2yarn": "^3.6.3",
-    "@docusaurus/theme-live-codeblock": "^3.6.3",
+    "@docusaurus/theme-live-codeblock": "^3.7.0",
     "@mdx-js/react": "^3.1.0",
     "clsx": "^2.1.1",
     "docusaurus-plugin-typedoc": "^1.2.0",
@@ -30,7 +30,7 @@
     "react-dom": "^18.3.1",
     "typedoc": "^0.27.6",
     "typedoc-plugin-markdown": "^4.4.1",
-    "typedoc-plugin-mdn-links": "^4.0.6"
+    "typedoc-plugin-mdn-links": "^4.0.7"
   },
   "devDependencies": {
     "@crowdin/cli": "^4.5.0",
