@@ -1,7 +1,54 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { load } from './index.js';
 
 describe('.load', () => {
+  it('(nodes) : should reuse a document supplied in an array', () => {
+    const previous = load(
+      '<html><head></head><body><p id="probe">Hello</p></body></html>',
+    );
+    const root = previous.root()[0];
+    const html = previous('html')[0];
+    const $ = load(previous.root().get());
+
+    expect($('html')).toHaveLength(1);
+    expect($('#probe').text()).toBe('Hello');
+    expect($.root()[0]).toBe(root);
+    expect(root.parent).toBe(null);
+    expect(html.parent).toBe(root);
+  });
+
+  it.each(['hello', 'a < b & c', ''])(
+    '(node) : should accept a CDATA node containing %j',
+    (content) => {
+      const $ = load(`<root><![CDATA[${content}]]></root>`, {
+        xmlMode: true,
+      });
+      const node = $('root').contents()[0];
+      const $node = $(node);
+
+      expect($node).toHaveLength(1);
+      expect($node[0]).toBe(node);
+      expect($node.text()).toBe(content);
+      expect($node.parent()[0]).toBe($('root')[0]);
+    },
+  );
+
+  it('(node) : should wrap CDATA nodes while iterating over XML contents', () => {
+    const $ = load(
+      '<root>before<![CDATA[a < b]]><child>inside</child>after</root>',
+      { xmlMode: true },
+    );
+    const texts: string[] = [];
+
+    $('root')
+      .contents()
+      .each(function () {
+        texts.push($(this).text());
+      });
+
+    expect(texts).toEqual(['before', 'a < b', 'inside', 'after']);
+  });
+
   it('(html) : should retain original root after creating a new node', () => {
     const $ = load('<body><ul id="fruits"></ul></body>');
     expect($('body')).toHaveLength(1);

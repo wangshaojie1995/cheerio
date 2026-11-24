@@ -16,24 +16,28 @@ interface ExtractDescriptor {
 
 type ExtractValue = string | ExtractDescriptor | [string | ExtractDescriptor];
 
+/** Descriptor map used by {@link extract}. */
 export type ExtractMap = Record<string, ExtractValue>;
 
-type ExtractedValue<V extends ExtractValue, M extends ExtractMap> = V extends [
+type ExtractedValue<V extends ExtractValue> = V extends [
   string | ExtractDescriptor,
 ]
-  ? NonNullable<ExtractedValue<V[0], M>>[]
+  ? NonNullable<ExtractedValue<V[0]>>[]
   : V extends string
     ? string | undefined
     : V extends ExtractDescriptor
-      ? V['value'] extends ExtractMap
-        ? ExtractedMap<V['value']> | undefined
-        : V['value'] extends ExtractDescriptorFn
-          ? ReturnType<V['value']> | undefined
-          : ReturnType<typeof prop> | undefined
+      ? V['value'] extends infer U
+        ? U extends ExtractMap
+          ? ExtractedMap<U> | undefined
+          : U extends ExtractDescriptorFn
+            ? ReturnType<U> | undefined
+            : ReturnType<typeof prop> | undefined
+        : never
       : never;
 
+/** Result type computed from an {@link ExtractMap}. */
 export type ExtractedMap<M extends ExtractMap> = {
-  [key in keyof M]: ExtractedValue<M[key], M>;
+  [key in keyof M]: ExtractedValue<M[key]>;
 };
 
 function getExtractDescr(
@@ -64,6 +68,7 @@ export function extract<M extends ExtractMap, T extends AnyNode>(
   const ret: Record<string, unknown> = {};
 
   for (const key in map) {
+    if (!Object.hasOwn(map, key)) continue;
     const descr = map[key];
     const isArray = Array.isArray(descr);
 
@@ -78,8 +83,9 @@ export function extract<M extends ExtractMap, T extends AnyNode>(
 
     if (isArray) {
       ret[key] = this._findBySelector(selector, Number.POSITIVE_INFINITY)
-        .map((_, el) => fn(el, key, ret))
-        .get();
+        .toArray()
+        .map((el) => fn(el, key, ret))
+        .filter((value) => value != null);
     } else {
       const $ = this._findBySelector(selector, 1);
       ret[key] = $.length > 0 ? fn($[0], key, ret) : undefined;

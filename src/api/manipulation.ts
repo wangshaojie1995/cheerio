@@ -5,22 +5,21 @@
  */
 
 import {
-  isTag,
-  Text,
-  hasChildren,
+  type AnyNode,
   cloneNode,
   Document,
-  type ParentNode,
-  type AnyNode,
   type Element,
+  hasChildren,
+  isTag,
+  type ParentNode,
+  Text,
 } from 'domhandler';
-import { update as updateDOM } from '../parse.js';
-import { text as staticText } from '../static.js';
-import { domEach, isHtml, isCheerio } from '../utils.js';
 import { removeElement } from 'domutils';
 import type { Cheerio } from '../cheerio.js';
-import type { BasicAcceptedElems, AcceptedElems } from '../types.js';
-import { ElementType } from 'htmlparser2';
+import { update as updateDOM } from '../parse.js';
+import { text as staticText } from '../static.js';
+import type { AcceptedElems, BasicAcceptedElems } from '../types.js';
+import { domEach, isCheerio, isHtml } from '../utils.js';
 
 /**
  * Create an array of nodes, recursing into arrays and parsing strings if
@@ -42,7 +41,7 @@ export function _makeDomArray<T extends AnyNode>(
   }
 
   if (typeof elem === 'string') {
-    return this._parse(elem, this.options, false, null).children.slice(0);
+    return [...this._parse(elem, this.options, false, null).children];
   }
 
   if ('length' in elem) {
@@ -130,58 +129,40 @@ function uniqueSplice(
   newElems: AnyNode[],
   parent: ParentNode,
 ): AnyNode[] {
-  const spliceArgs: Parameters<AnyNode[]['splice']> = [
-    spliceIdx,
-    spliceCount,
-    ...newElems,
-  ];
+  /*
+   * Before splicing in new elements, ensure they do not already appear in the
+   * current array.
+   */
+  for (const node of newElems) {
+    if (node.parent === parent) {
+      const prevIdx = array.indexOf(node);
+      if (prevIdx !== -1 && spliceIdx > prevIdx) {
+        spliceIdx--;
+      }
+    }
+    removeElement(node);
+  }
+
   const prev = spliceIdx === 0 ? null : array[spliceIdx - 1];
   const next =
     spliceIdx + spliceCount >= array.length
       ? null
       : array[spliceIdx + spliceCount];
 
-  /*
-   * Before splicing in new elements, ensure they do not already appear in the
-   * current array.
-   */
   for (let idx = 0; idx < newElems.length; ++idx) {
     const node = newElems[idx];
-    const oldParent = node.parent;
-
-    if (oldParent) {
-      const oldSiblings: AnyNode[] = oldParent.children;
-      const prevIdx = oldSiblings.indexOf(node);
-
-      if (prevIdx !== -1) {
-        oldParent.children.splice(prevIdx, 1);
-        if (parent === oldParent && spliceIdx > prevIdx) {
-          spliceArgs[0]--;
-        }
-      }
-    }
-
     node.parent = parent;
-
-    if (node.prev) {
-      node.prev.next = node.next ?? null;
-    }
-
-    if (node.next) {
-      node.next.prev = node.prev ?? null;
-    }
-
     node.prev = idx === 0 ? prev : newElems[idx - 1];
     node.next = idx === newElems.length - 1 ? next : newElems[idx + 1];
   }
 
   if (prev) {
-    prev.next = newElems[0];
+    prev.next = newElems[0] ?? next;
   }
   if (next) {
-    next.prev = newElems[newElems.length - 1];
+    next.prev = newElems[newElems.length - 1] ?? prev;
   }
-  return array.splice(...spliceArgs);
+  return array.splice(spliceIdx, spliceCount, ...newElems);
 }
 
 /**
@@ -331,7 +312,7 @@ function _wrap(
 
       const [wrapperDom] = this._makeDomArray(wrap, i < lastIdx);
 
-      if (!wrapperDom || !hasChildren(wrapperDom)) continue;
+      if (!(wrapperDom && hasChildren(wrapperDom))) continue;
 
       let elInsertLocation = wrapperDom;
 
@@ -589,7 +570,7 @@ export function wrapAll<T extends AnyNode>(
     let elInsertLocation: Element | undefined;
 
     for (let i = 0; i < wrap.length; i++) {
-      if (wrap[i].type === ElementType.Tag) {
+      if (isTag(wrap[i])) {
         elInsertLocation = wrap[i] as Element;
       }
     }
@@ -602,7 +583,7 @@ export function wrapAll<T extends AnyNode>(
      */
     while (elInsertLocation && j < elInsertLocation.children.length) {
       const child = elInsertLocation.children[j];
-      if (child.type === ElementType.Tag) {
+      if (isTag(child)) {
         elInsertLocation = child;
         j = 0;
       } else {
@@ -646,7 +627,7 @@ export function after<T extends AnyNode>(
   const lastIdx = this.length - 1;
 
   return domEach(this, (el, i) => {
-    if (!hasChildren(el) || !el.parent) {
+    if (!(hasChildren(el) && el.parent)) {
       return;
     }
 
@@ -698,11 +679,14 @@ export function insertAfter<T extends AnyNode>(
     target = this._make<AnyNode>(target);
   }
 
+  const targets = this._makeDomArray(target);
+  if (targets.length === 0) return this._make([]);
+
   this.remove();
 
   const clones: T[] = [];
 
-  for (const el of this._makeDomArray(target)) {
+  for (const el of targets) {
     const clonedSelf = this.clone().toArray();
     const { parent } = el;
     if (!parent) {
@@ -755,7 +739,7 @@ export function before<T extends AnyNode>(
   const lastIdx = this.length - 1;
 
   return domEach(this, (el, i) => {
-    if (!hasChildren(el) || !el.parent) {
+    if (!(hasChildren(el) && el.parent)) {
       return;
     }
 
@@ -804,6 +788,8 @@ export function insertBefore<T extends AnyNode>(
   target: BasicAcceptedElems<AnyNode>,
 ): Cheerio<T> {
   const targetArr = this._make<AnyNode>(target);
+
+  if (targetArr.length === 0) return this._make([]);
 
   this.remove();
 
@@ -920,8 +906,8 @@ export function replaceWith<T extends AnyNode>(
 }
 
 /**
- * Removes all children from each item in the selection. Text nodes and comment
- * nodes are left as is.
+ * Removes all children from each item in the selection. Items that cannot have
+ * children, such as text and comment nodes, are left as is.
  *
  * @category Manipulation
  * @example
@@ -989,7 +975,7 @@ export function html<T extends AnyNode>(
 ): Cheerio<T> | string | null {
   if (str === undefined) {
     const el = this[0];
-    if (!el || !hasChildren(el)) return null;
+    if (!(el && hasChildren(el))) return null;
     return this._render(el.children);
   }
 

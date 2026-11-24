@@ -1,4 +1,4 @@
-import { describe, it, expect, expectTypeOf } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import * as fixtures from '../__fixtures__/fixtures.js';
 import { load } from '../load-parse.js';
 
@@ -152,6 +152,28 @@ describe('$.extract', () => {
     ).toStrictEqual({ red: 'red=Four' });
   });
 
+  it('should correctly type check custom extraction functions returning non-string values', () => {
+    const $ = load(fixtures.eleven);
+    const $root = $.root();
+
+    expectTypeOf(
+      $root.extract({
+        red: {
+          selector: '.red',
+          value: (el) => $(el).text().length,
+        },
+      }),
+    ).toEqualTypeOf<{ red: number | undefined }>();
+    expect(
+      $root.extract({
+        red: {
+          selector: '.red',
+          value: (el) => $(el).text().length,
+        },
+      }),
+    ).toStrictEqual({ red: 4 });
+  });
+
   it('should extract multiple values using custom extraction functions', () => {
     const $ = load(fixtures.eleven);
     const $root = $.root();
@@ -176,6 +198,37 @@ describe('$.extract', () => {
         ],
       }),
     ).toStrictEqual({ red: ['red=Four', 'red=Five', 'red=Nine'] });
+  });
+
+  it('should preserve arrays returned by custom extraction functions', () => {
+    const $ = load(fixtures.eleven);
+    const extracted = $.extract({
+      red: [
+        {
+          selector: '.red',
+          value: (el, key) => [key, $(el).text()],
+        },
+      ],
+    });
+
+    expectTypeOf(extracted).toEqualTypeOf<{ red: string[][] }>();
+    expect(extracted).toStrictEqual({
+      red: [
+        ['red', 'Four'],
+        ['red', 'Five'],
+        ['red', 'Nine'],
+      ],
+    });
+  });
+
+  it('should omit nullish callback results while keeping other falsy values', () => {
+    const $ = load('<i></i><i></i><i></i><i></i><i></i>');
+    const values = [null, undefined, 0, false, ''];
+    let index = 0;
+
+    expect(
+      $.extract({ values: [{ selector: 'i', value: () => values[index++] }] }),
+    ).toStrictEqual({ values: [0, false, ''] });
   });
 
   it('should extract nested objects based on selectors', () => {
@@ -215,10 +268,54 @@ describe('$.extract', () => {
     });
   });
 
+  it('should correctly type check nested objects returning non-string values', () => {
+    const $ = load(fixtures.eleven);
+    const $root = $.root();
+
+    expectTypeOf(
+      $root.extract({
+        section: {
+          selector: 'ul:nth(1)',
+          value: {
+            red: {
+              selector: '.red',
+              value: (el) => $(el).text().length,
+            },
+          },
+        },
+      }),
+    ).toEqualTypeOf<{
+      section: { red: number | undefined } | undefined;
+    }>();
+    expect(
+      $root.extract({
+        section: {
+          selector: 'ul:nth(1)',
+          value: {
+            red: {
+              selector: '.red',
+              value: (el) => $(el).text().length,
+            },
+          },
+        },
+      }),
+    ).toStrictEqual({
+      section: {
+        red: 4,
+      },
+    });
+  });
+
   it('should handle missing href properties without errors (#4239)', () => {
     const $ = load(fixtures.eleven);
     expect<{ links: string[] }>(
       $.extract({ links: [{ selector: 'li', value: 'href' }] }),
     ).toStrictEqual({ links: [] });
+  });
+
+  it('should ignore inherited properties of the map', () => {
+    const $ = load(fixtures.eleven);
+    const map = Object.create({ red: '.red' }) as Record<string, string>;
+    expect($.extract(map)).toStrictEqual({});
   });
 });

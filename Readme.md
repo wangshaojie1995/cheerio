@@ -15,6 +15,9 @@
   <a href="#sponsors">
     <img src="https://img.shields.io/opencollective/sponsors/cheerio" alt="OpenCollective sponsors">
   </a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/cheeriojs/cheerio">
+    <img src="https://api.scorecard.dev/projects/github.com/cheeriojs/cheerio/badge" alt="OpenSSF Scorecard">
+  </a>
 </div>
 
 <br>
@@ -34,7 +37,15 @@ $.html();
 
 ## Installation
 
-`npm install cheerio`
+Install Cheerio using a package manager like npm, yarn, bun, or Deno.
+
+```bash
+npm install cheerio
+# or
+bun add cheerio
+# or
+deno install cheerio
+```
 
 ## Features
 
@@ -177,14 +188,11 @@ development and support.
 
 <!-- BEGIN SPONSORS: headliner -->
 
-<a href="https://tidelift.com/subscription/pkg/npm-cheerio" target="_blank" rel="noopener noreferrer">
-            <img height="128px" width="128px" src="https://humble.imgix.net/https%3A%2F%2Fgithub.com%2Ftidelift.png?ixlib=js-3.8.0&w=128&h=128&fit=fillmax&fill=solid&s=0713e6ee5c7ab01e7559df695c1e8cd9" title="Tidelift" alt="Tidelift"></img>
-          </a>
 <a href="https://github.com/" target="_blank" rel="noopener noreferrer">
-            <img height="128px" width="128px" src="https://humble.imgix.net/https%3A%2F%2Fgithub.com%2Fgithub.png?ixlib=js-3.8.0&w=128&h=128&fit=fillmax&fill=solid&s=a1e87ca289de84eb32ea85432cf8ad11" title="Github" alt="Github"></img>
+            <img height="128px" width="128px" src="https://humble.imgix.net/https%3A%2F%2Favatars.githubusercontent.com%2Fgithub?ixlib=js-3.8.0&w=128&h=128&fit=fillmax&fill=solid&s=65172918690f124c0adebece30c66471" title="Github" alt="Github"></img>
           </a>
 <a href="https://www.airbnb.com/" target="_blank" rel="noopener noreferrer">
-            <img height="128px" width="128px" src="https://humble.imgix.net/https%3A%2F%2Fgithub.com%2Fairbnb.png?ixlib=js-3.8.0&w=128&h=128&fit=fillmax&fill=solid&s=384cad45e10faea516202ad10801f895" title="AirBnB" alt="AirBnB"></img>
+            <img height="128px" width="128px" src="https://humble.imgix.net/https%3A%2F%2Favatars.githubusercontent.com%2Fairbnb?ixlib=js-3.8.0&w=128&h=128&fit=fillmax&fill=solid&s=e679125f79ca84598b8f8420b581dea5" title="AirBnB" alt="AirBnB"></img>
           </a>
 
 <!-- END SPONSORS -->
@@ -193,26 +201,14 @@ development and support.
 
 <!-- BEGIN SPONSORS: sponsor -->
 
-<a href="https://slotoking.ua/games/all-slots/" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Figrovye-avtomaty-ua%2F96bfde3%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=07091c88a0b859ecaa81ef10fadf3075" title="Ігрові автомати" alt="Ігрові автомати"></img>
-          </a>
 <a href="https://onlinecasinosspelen.com" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fonlinecasinosspelen%2F4ce3830%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=60e5dd9f3993a754d0e5d47a43ff7462" title="OnlineCasinosSpelen" alt="OnlineCasinosSpelen"></img>
-          </a>
-<a href="https://casinoZonderregistratie.net/" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fczrnet%2F24e6252%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=d9b81b3c39bca4d3a8f279e79c5eec8d" title="CasinoZonderRegistratie.net" alt="CasinoZonderRegistratie.net"></img>
+            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fonlinecasinosspelen%2F99ac6a2%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=8ec1ec058845b823858f22205485be02" title="OnlineCasinosSpelen" alt="OnlineCasinosSpelen"></img>
           </a>
 <a href="https://Nieuwe-Casinos.net" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fnieuwecasinos%2Fee150d6%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=c2663f8b5dcfc983ef5641028d7b430b" title="Nieuwe-Casinos.net" alt="Nieuwe-Casinos.net"></img>
+            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fnieuwecasinos%2Fc67d423%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=ed55d86b80b1aa8cf89b033020521945" title="Nieuwe-Casinos.net" alt="Nieuwe-Casinos.net"></img>
           </a>
-<a href="https://vedonlyontiyhtiot.com/" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fvedonlyontiyhtiot-com%2Favatar.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=9983cbab4b2e4b4f715c31acaa27bea6" title="Vedonlyontiyhtiot.com" alt="Vedonlyontiyhtiot.com"></img>
-          </a>
-<a href="https://puter.com/" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fputer%2Ff8643c4%2Favatar.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=533e28124d885c9d8b261e464db029c5" title="Puter.com" alt="Puter.com"></img>
-          </a>
-<a href="https://www.nodepositcasinobonus.org/" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fno-deposit-bonus%2F912e261%2Flogo.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=ce708f21996657eef8c5207fb84312b5" title="No Deposit Bonus" alt="No Deposit Bonus"></img>
+<a href="https://www.rapidproxy.io/?ref=cheerio" target="_blank" rel="noopener noreferrer">
+            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fwww.rapidproxy.io%2Fstatic%2Frapidproxy%2Fimages%2Fhd_ft_public%2Frapidproxy_logo.webp?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&rect=0%2C0%2C92%2C92&s=7317259362cd11f1050c21616be6d02f" title="Rapidproxy" alt="Rapidproxy"></img>
           </a>
 
 <!-- END SPONSORS -->
@@ -224,12 +220,7 @@ support for Cheerio and help us maintain and improve this open source project.
 
 <!-- BEGIN SPONSORS: backer -->
 
-<a href="https://kafidoff.com" target="_blank" rel="noopener noreferrer">
-            <img height="64px" width="64px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fkafidoff-vasy%2Fd7ff85c%2Favatar.png?ixlib=js-3.8.0&w=64&h=64&fit=fillmax&fill=solid&s=a41c66c2f9b1d3a7a241e425e7aa2d09" title="Vasy Kafidoff" alt="Vasy Kafidoff"></img>
-          </a>
-<a href="https://medium.com/norch" target="_blank" rel="noopener noreferrer">
-            <img height="48px" width="48px" src="https://humble.imgix.net/https%3A%2F%2Fimages.opencollective.com%2Fespenklem%2F7e8cd40%2Favatar.png?ixlib=js-3.8.0&w=48&h=48&fit=fillmax&fill=solid&s=f727bc0f59d1738188ec8e4499123149" title="Espen Klem" alt="Espen Klem"></img>
-          </a>
+
 
 <!-- END SPONSORS -->
 

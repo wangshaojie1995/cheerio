@@ -1,7 +1,7 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import * as cheerio from './index.js';
+import { createServer, type RequestListener, type Server } from 'node:http';
 import { Writable } from 'node:stream';
-import { createServer, type Server, type RequestListener } from 'node:http';
+import { afterEach, describe, expect, it } from 'vitest';
+import * as cheerio from './index.js';
 
 function noop() {
   // Ignore
@@ -17,13 +17,13 @@ function getPromise() {
   return { promise, cb };
 }
 
-const TEST_HTML = '<h1>Hello World</h1>';
+const TEST_HTML = '<h1>Hello World</h1><a href="link">Example</a>';
 const TEST_HTML_UTF16 = Buffer.from(TEST_HTML, 'utf16le');
 const TEST_HTML_UTF16_BOM = Buffer.from([
   // UTF16-LE BOM
   0xff,
   0xfe,
-  ...Array.from(TEST_HTML_UTF16),
+  ...TEST_HTML_UTF16,
 ]);
 
 describe('loadBuffer', () => {
@@ -97,6 +97,7 @@ describe('decodeStream', () => {
     expect($.html()).toBe(
       `<html><head></head><body>${TEST_HTML}</body></html>`,
     );
+    expect($('a').prop('href')).toBe('link');
   });
 
   it('should use htmlparser2 for XML', async () => {
@@ -195,5 +196,43 @@ describe('fromURL', () => {
     await expect(cheerio.fromURL(`http://localhost:${port}`)).rejects.toThrow(
       'Response Error',
     );
+  });
+
+  it('should follow redirects', async () => {
+    let firstRequestUrl: string | undefined;
+    let secondRequestUrl: string | undefined;
+    const port = await createTestServer('text/html', TEST_HTML, (req, res) => {
+      if (firstRequestUrl === undefined) {
+        firstRequestUrl = req.url;
+        res.writeHead(302, { Location: `http://localhost:${port}/final/path` });
+        res.end();
+      } else {
+        secondRequestUrl = req.url;
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(TEST_HTML);
+      }
+    });
+
+    const $ = await cheerio.fromURL(`http://localhost:${port}/first`);
+    expect(firstRequestUrl).toBe('/first');
+    expect(secondRequestUrl).toBe('/final/path');
+    expect($.html()).toBe(
+      `<html><head></head><body>${TEST_HTML}</body></html>`,
+    );
+    expect($('a').prop('href')).toBe(`http://localhost:${port}/final/link`);
+  });
+
+  it('should set `baseURI` to the requested URL when there is no redirect', async () => {
+    const port = await createTestServer(
+      'text/html',
+      '<a id="relative" href="link">relative</a><a id="rooted" href="/link">rooted</a>',
+    );
+
+    const $ = await cheerio.fromURL(`http://localhost:${port}/dir/page`);
+
+    expect($('#relative').prop('href')).toBe(
+      `http://localhost:${port}/dir/link`,
+    );
+    expect($('#rooted').prop('href')).toBe(`http://localhost:${port}/link`);
   });
 });

@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { load, type CheerioAPI, type Cheerio } from '../index.js';
+import type { AnyNode, Element } from 'domhandler';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  fruits,
   divcontainers,
+  fruits,
   mixedText,
   unwrapspans,
 } from '../__fixtures__/fixtures.js';
-import type { AnyNode, Element } from 'domhandler';
+import { type Cheerio, type CheerioAPI, load } from '../index.js';
 
 describe('$(...)', () => {
   let $: CheerioAPI;
@@ -15,6 +15,94 @@ describe('$(...)', () => {
   beforeEach(() => {
     $ = load(fruits);
     $fruits = $('#fruits');
+  });
+
+  it.each(['insertBefore', 'insertAfter'] as const)(
+    '.%s preserves the source when the target is empty',
+    (method) => {
+      const source = $('.apple');
+      const originalHtml = $.html();
+      const originalParent = source[0].parent;
+
+      expect(source[method]('.missing')).toHaveLength(0);
+      expect($.html()).toBe(originalHtml);
+      expect(source[0].parent).toBe(originalParent);
+    },
+  );
+
+  describe('insertion sibling links', () => {
+    it.each([
+      {
+        name: 'append the last child again',
+        move: (doc: CheerioAPI) => doc('main').append(doc('#e')),
+        order: 'abcde',
+      },
+      {
+        name: 'insert an existing next sibling after the target',
+        move: (doc: CheerioAPI) => doc('#b').after(doc('#c')),
+        order: 'abcde',
+      },
+      {
+        name: 'move children from both sides of the insertion point',
+        move: (doc: CheerioAPI) => doc('#d').before(doc('#a, #b, #e')),
+        order: 'cabed',
+      },
+      {
+        name: 'append empty content',
+        move: (doc: CheerioAPI) => doc('main').append(''),
+        order: 'abcde',
+      },
+      {
+        name: 'insert empty content after a child',
+        move: (doc: CheerioAPI) => doc('#c').after(''),
+        order: 'abcde',
+      },
+      {
+        name: 'replace a child with empty content',
+        move: (doc: CheerioAPI) => doc('#c').replaceWith(''),
+        order: 'abde',
+      },
+    ])('should preserve links when we $name', ({ move, order }) => {
+      const doc = load(
+        '<main><i id="a"></i><i id="b"></i><i id="c"></i><i id="d"></i><i id="e"></i></main>',
+      );
+      const parent = doc('main')[0];
+      const original = new Map(
+        doc('main')
+          .children()
+          .get()
+          .map((node) => [doc(node).attr('id'), node]),
+      );
+
+      move(doc);
+
+      const children = doc('main').contents().get();
+      expect(children.map((node) => doc(node).attr('id')).join('')).toBe(order);
+      for (const [index, node] of children.entries()) {
+        expect(node).toBe(original.get(order[index]));
+        expect(node.parent).toBe(parent);
+        expect(node.prev).toBe(children[index - 1] ?? null);
+        expect(node.next).toBe(children[index + 1] ?? null);
+      }
+    });
+
+    it('should preserve links around an existing wrapper', () => {
+      const doc = load(
+        '<main><section id="wrapper"></section><i id="target"></i><i id="tail"></i></main>',
+      );
+      const wrapper = doc('#wrapper');
+      const target = doc('#target');
+      const tail = doc('#tail');
+
+      target.wrap(wrapper);
+
+      expect(doc('main').children().get()).toEqual([wrapper[0], tail[0]]);
+      expect(wrapper.children()[0]).toBe(target[0]);
+      expect(wrapper[0].prev).toBeNull();
+      expect(wrapper[0].next).toBe(tail[0]);
+      expect(tail[0].prev).toBe(wrapper[0]);
+      expect(tail[0].next).toBeNull();
+    });
   });
 
   describe('.wrap', () => {
@@ -162,7 +250,7 @@ describe('$(...)', () => {
       expect($fruits.find('.pear').parent()[0]).toBe($fruits.find('div')[0]);
     });
 
-    it('($(...)) : for each element it should add a wrapper elment and add the selected element as its child', () => {
+    it('($(...)) : for each element it should add a wrapper element and add the selected element as its child', () => {
       const $fruitDecorator = $('<div class="fruit-decorator"></div>');
       $('li').wrap($fruitDecorator);
       expect($fruits.children().eq(0).hasClass('fruit-decorator')).toBe(true);
@@ -301,7 +389,7 @@ describe('$(...)', () => {
       expect($fruits.find('.pear')).toHaveLength(1);
     });
 
-    it('($(...)) : for each element it should add a wrapper elment and add the selected element as its child', () => {
+    it('($(...)) : for each element it should add a wrapper element and add the selected element as its child', () => {
       const $fruitDecorator = $('<div class="fruit-decorator"></div>');
       const $children = $fruits.children();
       $('li').wrapInner($fruitDecorator);
@@ -1725,6 +1813,15 @@ describe('$(...)', () => {
   });
 
   describe('.html', () => {
+    it('should preserve template contents when reading innerHTML', () => {
+      const contents = '<b>first</b><!--between--><i>last</i>';
+      const markup = `<template>${contents}</template>`;
+      const doc = load(markup, {}, false);
+
+      expect(doc('template').html()).toBe(contents);
+      expect(doc.html()).toBe(markup);
+    });
+
     it('() : should get the innerHTML for an element', () => {
       expect($fruits.html()).toBe(
         [
@@ -1809,6 +1906,49 @@ describe('$(...)', () => {
   });
 
   describe('.toString', () => {
+    it('should render nested documents without changing their nodes', () => {
+      const first = load('<b>first</b><!--between-->', {}, false).root()[0];
+      const second = load('<i>last</i>', {}, false).root()[0];
+      const doc = load([first, second]);
+      const root = doc.root();
+      const document = root[0];
+      const children = [...document.children];
+      const markup = '<b>first</b><!--between--><i>last</i>';
+
+      expect(root.toString()).toBe(markup);
+      expect(root.toString()).toBe(markup);
+      expect(doc.html()).toBe(markup);
+      expect(root).toHaveLength(1);
+      expect(root[0]).toBe(document);
+      expect(document.children).toHaveLength(children.length);
+      for (const [index, child] of children.entries()) {
+        expect(document.children[index]).toBe(child);
+        expect(child.parent).toBe(document);
+      }
+    });
+
+    it('should render deeply nested documents', () => {
+      let document = load('<p>first</p>', {}, false).root()[0];
+      for (let depth = 0; depth < 20_000; depth += 1) {
+        const empty = load('', {}, false).root()[0];
+        document = load([document, empty], {}, false).root()[0];
+      }
+
+      const render = () => load(document).root().toString();
+      expect(render).not.toThrow();
+      expect(render()).toBe('<p>first</p>');
+    });
+
+    it('should keep a rendered root selection intact', () => {
+      const markup = '<p>first</p><p>last</p>';
+      const root = load(markup, {}, false).root();
+      const document = root[0];
+
+      expect(root.toString()).toBe(markup);
+      expect(root).toHaveLength(1);
+      expect(root[0]).toBe(document);
+    });
+
     it('() : should get the outerHTML for an element', () => {
       expect($fruits.toString()).toBe(fruits);
     });

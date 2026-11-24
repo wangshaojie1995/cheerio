@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { parseDOM } from 'htmlparser2';
-import { type Cheerio } from './index.js';
-import { cheerio, fruits, food, noscript } from './__fixtures__/fixtures.js';
 import type { AnyNode, Element } from 'domhandler';
+import { parseDocument } from 'htmlparser2';
+import { describe, expect, it } from 'vitest';
+import { cheerio, food, fruits, noscript } from './__fixtures__/fixtures.js';
+import type { Cheerio } from './index.js';
 
 declare module './index.js' {
   interface Cheerio<T> {
@@ -228,7 +228,7 @@ describe('cheerio', () => {
       extended.children =
       // @ts-expect-error - Ignore for testing
       extended.each =
-        function () {
+        () => {
           /* Ignore */
         };
     const $empty = cheerio(extended);
@@ -266,9 +266,8 @@ describe('cheerio', () => {
 
     // Issue #1092
     it('should handle a character `)` in `:contains` selector', () => {
-      const result = cheerio.load('<p>)aaa</p>')(
-        String.raw`:contains('\)aaa')`,
-      );
+      const result =
+        cheerio.load('<p>)aaa</p>')(String.raw`:contains('\)aaa')`);
       expect(result).toHaveLength(3);
       expect(result.first().prop('tagName')).toBe('HTML');
       expect(result.eq(1).prop('tagName')).toBe('BODY');
@@ -294,14 +293,14 @@ describe('cheerio', () => {
     });
 
     it('should allow loading a pre-parsed DOM', () => {
-      const dom = parseDOM(food);
+      const dom = parseDocument(food).children;
       const $ = cheerio.load(dom);
 
       expect($('ul')).toHaveLength(3);
     });
 
     it('should allow loading a single element', () => {
-      const el = parseDOM(food)[0];
+      const el = parseDocument(food).children[0];
       const $ = cheerio.load(el);
 
       expect($('ul')).toHaveLength(3);
@@ -356,6 +355,14 @@ describe('cheerio', () => {
       expect(dom.html()).toBe(str);
     });
 
+    it('should keep selection options in derived selections', () => {
+      const $ = cheerio.load('', { xml: { xmlMode: false } });
+      const x = $('<x/>', null, undefined, { xml: true });
+      expect(x.clone().toString()).toBe('<x/>');
+      const y = $('<y/>', null, undefined, { xmlMode: true });
+      expect(y.clone().toString()).toBe('<y/>');
+    });
+
     it('should return a fully-qualified Function', () => {
       const $ = cheerio.load('<div>');
 
@@ -402,7 +409,7 @@ describe('cheerio', () => {
         const $a = cheerio.load('<div>');
         const $b = cheerio.load('<div>');
 
-        ($a.prototype as Cheerio<AnyNode>).foo = function () {
+        ($a.prototype as Cheerio<AnyNode>).foo = () => {
           /* Ignore */
         };
 

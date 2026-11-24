@@ -4,33 +4,41 @@
  */
 
 export * from './load-parse.js';
-export { contains, merge } from './static.js';
-export type * from './types.js';
 export type {
+  AnyNode,
   Cheerio,
   CheerioAPI,
   CheerioOptions,
+  Document,
+  Element,
   HTMLParser2Options,
+  ParentNode,
 } from './slim.js';
+export { contains, merge } from './static.js';
+export type * from './types.js';
 
-import { adapter as htmlparser2Adapter } from 'parse5-htmlparser2-tree-adapter';
-import * as htmlparser2 from 'htmlparser2';
-import { ParserStream as Parse5Stream } from 'parse5-parser-stream';
+import { finished, Writable } from 'node:stream';
 import {
-  decodeBuffer,
   DecodeStream,
+  decodeBuffer,
   type SnifferOptions,
 } from 'encoding-sniffer';
-import * as undici from 'undici';
-import MIMEType from 'whatwg-mimetype';
-import { Writable, finished } from 'node:stream';
+import * as htmlparser2 from 'htmlparser2';
+import { adapter as htmlparser2Adapter } from 'parse5-htmlparser2-tree-adapter';
+import { ParserStream as Parse5Stream } from 'parse5-parser-stream';
+/*
+ * `undici` is only needed by `fromURL`, and importing it costs around 60ms and
+ * 8MB of heap. It is therefore loaded lazily, the same way `node:http` does it.
+ */
+import type * as undici from 'undici';
+import { MIMEType } from 'whatwg-mimetype';
 import type { CheerioAPI } from './load.js';
+import { load } from './load-parse.js';
 import {
+  type CheerioOptions,
   flattenOptions,
   type InternalOptions,
-  type CheerioOptions,
 } from './options.js';
-import { load } from './load-parse.js';
 
 /**
  * Sniffs the encoding of a buffer, then creates a querying function bound to a
@@ -69,7 +77,7 @@ function _stringStream(
 ): Writable {
   if (options?._useHtmlParser2) {
     const parser = htmlparser2.createDocumentStream(
-      (err, document) => cb(err, load(document)),
+      (err, document) => cb(err, load(document, options)),
       options,
     );
 
@@ -99,7 +107,7 @@ function _stringStream(
 
   const stream = new Parse5Stream(options);
 
-  finished(stream, (err) => cb(err, load(stream.document)));
+  finished(stream, (err) => cb(err, load(stream.document, options)));
 
   return stream;
 }
@@ -142,6 +150,7 @@ export function stringStream(
   return _stringStream(flattenOptions(options), cb);
 }
 
+/** Options used by {@link decodeStream} for decoding incoming buffers. */
 export interface DecodeStreamOptions extends CheerioOptions {
   encoding?: SnifferOptions;
 }
@@ -175,8 +184,12 @@ export function decodeStream(
   return decodeStream;
 }
 
-type UndiciStreamOptions = Parameters<typeof undici.stream>[1];
+type UndiciStreamOptions = Omit<
+  undici.Dispatcher.RequestOptions<unknown>,
+  'path'
+>;
 
+/** Options accepted by {@link fromURL}. */
 export interface CheerioRequestOptions extends DecodeStreamOptions {
   /** The options passed to `undici`'s `stream` method. */
   requestOptions?: UndiciStreamOptions;
@@ -184,8 +197,6 @@ export interface CheerioRequestOptions extends DecodeStreamOptions {
 
 const defaultRequestOptions: UndiciStreamOptions = {
   method: 'GET',
-  // Allow redirects by default
-  maxRedirections: 5,
   // Set an Accept header
   headers: {
     accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -215,61 +226,73 @@ export async function fromURL(
   options: CheerioRequestOptions = {},
 ): Promise<CheerioAPI> {
   const {
-    requestOptions = {
-      ...defaultRequestOptions,
-      dispatcher: undici
-        .getGlobalDispatcher()
-        .compose(undici.interceptors.responseError()),
-    },
+    requestOptions = defaultRequestOptions,
     encoding = {},
     ...cheerioOptions
   } = options;
   let undiciStream: Promise<undici.Dispatcher.StreamData<unknown>> | undefined;
 
+  const { Client, errors, interceptors } = await import('undici');
+
   // Add headers if none were supplied.
-  requestOptions.headers ??= defaultRequestOptions.headers;
+  const urlObject = typeof url === 'string' ? new URL(url) : url;
+  const streamOptions = {
+    headers: defaultRequestOptions.headers,
+    path: urlObject.pathname + urlObject.search,
+    ...requestOptions,
+  };
 
   const promise = new Promise<CheerioAPI>((resolve, reject) => {
-    undiciStream = undici.stream(url, requestOptions, (res) => {
-      const contentTypeHeader = res.headers['content-type'] ?? 'text/html';
-      const mimeType = new MIMEType(
-        Array.isArray(contentTypeHeader)
-          ? contentTypeHeader[0]
-          : contentTypeHeader,
-      );
+    undiciStream = new Client(urlObject.origin)
+      .compose(interceptors.redirect({ maxRedirections: 5 }))
+      .stream(streamOptions, (res) => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          throw new errors.ResponseError('Response Error', res.statusCode, {
+            headers: res.headers,
+          });
+        }
 
-      if (!mimeType.isHTML() && !mimeType.isXML()) {
-        throw new RangeError(
-          `The content-type "${mimeType.essence}" is neither HTML nor XML.`,
+        const contentTypeHeader = res.headers['content-type'] ?? 'text/html';
+        const mimeType = new MIMEType(
+          Array.isArray(contentTypeHeader)
+            ? contentTypeHeader[0]
+            : contentTypeHeader,
         );
-      }
 
-      // Forward the charset from the header to the decodeStream.
-      encoding.transportLayerEncodingLabel = mimeType.parameters.get('charset');
+        if (!(mimeType.isHTML() || mimeType.isXML())) {
+          throw new RangeError(
+            `The content-type "${mimeType.essence}" is neither HTML nor XML.`,
+          );
+        }
 
-      /*
-       * If we allow redirects, we will have entries in the history.
-       * The last entry will be the final URL.
-       */
-      const history = (
-        res.context as
-          | {
-              history?: URL[];
-            }
-          | undefined
-      )?.history;
+        // Forward the charset from the header to the decodeStream.
+        encoding.transportLayerEncodingLabel =
+          mimeType.parameters.get('charset');
 
-      const opts = {
-        encoding,
-        // Set XML mode based on the MIME type.
-        xmlMode: mimeType.isXML(),
-        // Set the `baseURL` to the final URL.
-        baseURL: history ? history[history.length - 1] : url,
-        ...cheerioOptions,
-      };
+        /*
+         * If we allow redirects, we will have entries in the history.
+         * The last entry will be the final URL.
+         */
+        const history = (
+          res.context as
+            | {
+                history?: URL[];
+              }
+            | undefined
+        )?.history;
+        // Set the `baseURI` to the final URL.
+        const baseURI = history?.at(-1) ?? urlObject;
 
-      return decodeStream(opts, (err, $) => (err ? reject(err) : resolve($)));
-    });
+        const opts: DecodeStreamOptions = {
+          encoding,
+          // Set XML mode based on the MIME type.
+          xmlMode: mimeType.isXML(),
+          baseURI,
+          ...cheerioOptions,
+        };
+
+        return decodeStream(opts, (err, $) => (err ? reject(err) : resolve($)));
+      });
   });
 
   // Let's make sure the request is completed before returning the promise.

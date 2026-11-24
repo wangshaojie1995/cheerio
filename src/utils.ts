@@ -1,3 +1,13 @@
+export {
+  hasChildren,
+  isCDATA,
+  isComment,
+  isDirective,
+  isDocument,
+  isTag,
+  isText,
+} from 'domhandler';
+
 import type { AnyNode } from 'domhandler';
 import type { Cheerio } from './cheerio.js';
 
@@ -11,7 +21,10 @@ import type { Cheerio } from './cheerio.js';
 export function isCheerio<T>(
   maybeCheerio: unknown,
 ): maybeCheerio is Cheerio<T> {
-  return (maybeCheerio as Cheerio<T>).cheerio != null;
+  return (
+    (maybeCheerio as Cheerio<T> | null | undefined)?.cheerio ===
+    '[cheerio object]'
+  );
 }
 
 /**
@@ -60,13 +73,13 @@ export function domEach<
   return array;
 }
 
-const enum CharacterCode {
-  LowerA = 97,
-  LowerZ = 122,
-  UpperA = 65,
-  UpperZ = 90,
-  Exclamation = 33,
-}
+const CharacterCode = {
+  LowerA: 97,
+  LowerZ: 122,
+  UpperA: 65,
+  UpperZ: 90,
+  Exclamation: 33,
+} as const;
 
 /**
  * Check if string is HTML.
@@ -80,11 +93,15 @@ const enum CharacterCode {
  * @returns Indicates if `str` is HTML.
  */
 export function isHtml(str: string): boolean {
+  if (typeof str !== 'string') {
+    return false;
+  }
+
   const tagStart = str.indexOf('<');
 
   if (tagStart === -1 || tagStart > str.length - 3) return false;
 
-  const tagChar = str.charCodeAt(tagStart + 1) as CharacterCode;
+  const tagChar = str.charCodeAt(tagStart + 1);
 
   return (
     ((tagChar >= CharacterCode.LowerA && tagChar <= CharacterCode.LowerZ) ||

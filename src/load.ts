@@ -1,14 +1,16 @@
+import type { AnyNode, Document, Element, ParentNode } from 'domhandler';
+import { ElementType } from 'htmlparser2';
+import { Cheerio } from './cheerio.js';
 import {
   type CheerioOptions,
-  type InternalOptions,
   flattenOptions,
+  type InternalOptions,
 } from './options.js';
 import * as staticMethods from './static.js';
-import { Cheerio } from './cheerio.js';
-import { isHtml, isCheerio } from './utils.js';
-import type { AnyNode, Document, Element, ParentNode } from 'domhandler';
-import type { SelectorType, BasicAcceptedElems } from './types.js';
-import { ElementType } from 'htmlparser2';
+import type { BasicAcceptedElems, SelectorType } from './types.js';
+import { isCheerio, isHtml } from './utils.js';
+
+export type { AnyNode, Document, Element, ParentNode } from 'domhandler';
 
 type StaticType = typeof staticMethods;
 
@@ -104,6 +106,12 @@ export interface CheerioAPI extends StaticType {
   load: ReturnType<typeof getLoad>;
 }
 
+/**
+ * Create a loader factory from parser and renderer implementations.
+ *
+ * @param parse - Parser used to convert input into a document.
+ * @param render - Renderer used to serialize nodes back to markup.
+ */
 export function getLoad(
   parse: Cheerio<AnyNode>['_parse'],
   render: (
@@ -146,7 +154,14 @@ export function getLoad(
         selector?: ArrayLike<T> | T | string,
         context?: BasicAcceptedElems<AnyNode> | null,
       ): Cheerio<T> {
-        const cheerio = initialize(selector, context);
+        // Keep options that were passed to `$()` for this selection.
+        const cheerio = initialize(
+          selector,
+          context,
+          undefined,
+          undefined,
+          this.options,
+        );
         cheerio.prevObject = this;
 
         return cheerio;
@@ -171,13 +186,14 @@ export function getLoad(
       context?: BasicAcceptedElems<AnyNode> | null,
       root: BasicAcceptedElems<Document> = initialRoot,
       opts?: CheerioOptions,
+      flattenedOpts?: InternalOptions,
     ): Cheerio<S extends SelectorType ? Element : T> {
       type Result = S extends SelectorType ? Element : T;
 
       // $($)
       if (selector && isCheerio<Result>(selector)) return selector;
 
-      const options = flattenOptions(opts, internalOpts);
+      const options = flattenedOpts ?? flattenOptions(opts, internalOpts);
       const r =
         typeof root === 'string'
           ? [parse(root, options, false, null)]
@@ -274,6 +290,8 @@ function isNode(obj: unknown): obj is AnyNode {
     !!obj.name ||
     // @ts-expect-error: TS doesn't know about the `type` property.
     obj.type === ElementType.Root ||
+    // @ts-expect-error: TS doesn't know about the `type` property.
+    obj.type === ElementType.CDATA ||
     // @ts-expect-error: TS doesn't know about the `type` property.
     obj.type === ElementType.Text ||
     // @ts-expect-error: TS doesn't know about the `type` property.

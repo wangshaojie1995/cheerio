@@ -4,11 +4,16 @@
  *   Adapted from
  *   https://github.com/eslint/website/blob/230e73457dcdc2353ad7934e876a5a222a17b1d7/_tools/fetch-sponsors.js.
  */
-
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,
+                  @typescript-eslint/no-unsafe-return,
+                  @typescript-eslint/no-unsafe-call,
+                  @typescript-eslint/no-unsafe-argument,
+                  @typescript-eslint/no-unsafe-member-access,
+                  @typescript-eslint/prefer-nullish-coalescing */
 import * as fs from 'node:fs/promises';
-import { request } from 'undici';
-import { graphql as githubGraphQL } from '@octokit/graphql';
 import ImgixClient from '@imgix/js-core';
+import { graphql as githubGraphQL } from '@octokit/graphql';
+import { request } from 'undici';
 
 type Tier = 'headliner' | 'sponsor' | 'professional' | 'backer';
 
@@ -28,20 +33,9 @@ const tierSponsors: Record<Tier, Sponsor[]> = {
   headliner: [
     // Some sponsors are manually added here.
     {
-      createdAt: '2023-03-03',
-      name: 'Tidelift',
-      image: 'https://github.com/tidelift.png',
-      url: 'https://tidelift.com/subscription/pkg/npm-cheerio',
-      type: 'FUND',
-      monthlyDonation: 0,
-      totalDonations: 0,
-      source: 'manual',
-      tier: 'headliner',
-    },
-    {
       createdAt: '2022-06-24',
       name: 'Github',
-      image: 'https://github.com/github.png',
+      image: 'https://avatars.githubusercontent.com/github',
       url: 'https://github.com/',
       type: 'ORGANIZATION',
       monthlyDonation: 0,
@@ -52,7 +46,7 @@ const tierSponsors: Record<Tier, Sponsor[]> = {
     {
       createdAt: '2018-05-02',
       name: 'AirBnB',
-      image: 'https://github.com/airbnb.png',
+      image: 'https://avatars.githubusercontent.com/airbnb',
       url: 'https://www.airbnb.com/',
       type: 'ORGANIZATION',
       monthlyDonation: 0,
@@ -105,6 +99,67 @@ function getTierSlug(monthlyDonation: number): Tier | null {
 }
 
 /**
+ * Returns when a recurring charge stops covering its sponsor, clamping the day
+ * to the end of shorter months (e.g. Jan 31 + 1 month is Feb 28, not Mar 3).
+ *
+ * @param chargedAt - When the order was last charged.
+ * @param months - The length of the billing period in months.
+ * @returns The end of the paid period, in milliseconds since the epoch.
+ */
+function getPaidUntil(chargedAt: string, months: number): number {
+  const date = new Date(chargedAt);
+  const day = date.getUTCDate();
+
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() + months);
+
+  const lastDay = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+
+  date.setUTCDate(Math.min(day, lastDay));
+
+  return date.getTime();
+}
+
+/**
+ * Returns an order's latest charge, unless it was refunded. Rejected
+ * contributions are refunded and cancelled, and must not keep their listing.
+ *
+ * @param order - The order, including its transactions.
+ * @returns The latest charge that still stands, if any.
+ */
+function getLastKeptCharge(order: any): any {
+  const transactions = order.transactions ?? [];
+  let lastCharge: any;
+
+  for (const transaction of transactions) {
+    if (
+      transaction.kind === 'CONTRIBUTION' &&
+      transaction.type === 'CREDIT' &&
+      !transaction.isRefund &&
+      (!lastCharge || transaction.createdAt > lastCharge.createdAt)
+    ) {
+      lastCharge = transaction;
+    }
+  }
+
+  return lastCharge?.isRefunded ? undefined : lastCharge;
+}
+
+/**
+ * Returns the monthly amount, in dollars, of an Open Collective order.
+ *
+ * @param order - The order.
+ * @returns The monthly amount.
+ */
+function getMonthlyAmount(order: any): number {
+  return order.frequency === 'YEARLY'
+    ? order.amount.value / 12
+    : order.amount.value;
+}
+
+/**
  * Fetch order data from Open Collective using the GraphQL API.
  *
  * @returns An array of sponsors.
@@ -114,27 +169,50 @@ async function fetchOpenCollectiveSponsors(): Promise<Sponsor[]> {
 
   const query = `{
         account(slug: "cheerio") {
-          orders(status: ACTIVE, filter: INCOMING) {
+          active: orders(status: [ACTIVE], filter: INCOMING, limit: 1000) {
+            totalCount
             nodes {
-              createdAt
-              fromAccount {
-                name
-                website
-                imageUrl
+              ...SponsorOrder
+            }
+          }
+          cancelled: orders(status: [CANCELLED], filter: INCOMING, limit: 1000) {
+            totalCount
+            nodes {
+              ...SponsorOrder
+              transactions {
+                kind
                 type
-              }
-              amount {
-                value
-              }
-              tier {
-                slug
-              }
-              frequency
-              totalDonations {
-                value
+                isRefund
+                isRefunded
+                amount {
+                  value
+                }
+                createdAt
               }
             }
           }
+        }
+      }
+
+      fragment SponsorOrder on Order {
+        createdAt
+        lastChargedAt
+        fromAccount {
+          slug
+          name
+          website
+          imageUrl
+          type
+        }
+        amount {
+          value
+        }
+        tier {
+          slug
+        }
+        frequency
+        totalDonations {
+          value
         }
       }`;
 
@@ -146,7 +224,83 @@ async function fetchOpenCollectiveSponsors(): Promise<Sponsor[]> {
 
   const payload: any = await body.json();
 
-  return payload.data.account.orders.nodes.map((order: any): Sponsor => {
+  const { active, cancelled } = payload.data.account;
+
+  // Fail loudly instead of silently dropping sponsors once a page is not enough.
+  if (
+    active.nodes.length < active.totalCount ||
+    cancelled.nodes.length < cancelled.totalCount
+  ) {
+    throw new Error('Open Collective orders exceed one page; add pagination.');
+  }
+
+  // The highest monthly amount each account currently pays via active orders.
+  const activeAmounts = new Map<string, number>();
+
+  for (const order of active.nodes) {
+    const slug = order.fromAccount?.slug;
+    const amount = Math.max(
+      activeAmounts.get(slug) ?? 0,
+      getMonthlyAmount(order),
+    );
+    activeAmounts.set(slug, amount);
+  }
+
+  /*
+   * A cancelled recurring order has still paid for its current period, so keep
+   * the sponsor listed until that period is over. Per account, the highest paid
+   * order wins — including over a smaller active order the sponsor switched to.
+   */
+  const stillPaid = new Map<string, { order: any; paidUntil: number }>();
+
+  for (const order of cancelled.nodes) {
+    if (!order.fromAccount) {
+      continue;
+    }
+
+    const { slug } = order.fromAccount;
+    const months =
+      order.frequency === 'MONTHLY' ? 1 : order.frequency === 'YEARLY' ? 12 : 0;
+
+    if (!order.lastChargedAt || months === 0) {
+      continue;
+    }
+
+    const paidUntil = getPaidUntil(order.lastChargedAt, months);
+
+    const charge = paidUntil > Date.now() && getLastKeptCharge(order);
+
+    if (!charge) {
+      continue;
+    }
+
+    // Recognize the amount that was actually charged, not a later edit.
+    order.amount = charge.amount;
+
+    const amount = getMonthlyAmount(order);
+    const current = stillPaid.get(slug);
+    const currentAmount = current ? getMonthlyAmount(current.order) : -1;
+
+    if (
+      amount <= (activeAmounts.get(slug) ?? -1) ||
+      amount < currentAmount ||
+      (amount === currentAmount && paidUntil <= current!.paidUntil)
+    ) {
+      continue;
+    }
+
+    stillPaid.set(slug, { order, paidUntil });
+  }
+
+  const orders = active.nodes.filter(
+    (order: any) => !stillPaid.has(order.fromAccount?.slug),
+  );
+
+  for (const { order } of stillPaid.values()) {
+    orders.push(order);
+  }
+
+  return orders.map((order: any): Sponsor => {
     const donation = order.amount.value * 100;
     const monthlyDonation =
       order.frequency === 'YEARLY' ? Math.round(donation / 12) : donation;
@@ -160,7 +314,9 @@ async function fetchOpenCollectiveSponsors(): Promise<Sponsor[]> {
       monthlyDonation,
       totalDonations: order.totalDonations.value * 100,
       source: 'opencollective',
-      tier: getTierSlug(monthlyDonation / 100),
+      tier: getTierSlug(
+        Math.min(monthlyDonation / 100, order.totalDonations.value),
+      ),
     };
   });
 }
@@ -237,10 +393,12 @@ async function fetchGitHubSponsors(): Promise<Sponsor[]> {
 }
 
 async function fetchSponsors(): Promise<Sponsor[]> {
-  const openCollectiveSponsors = fetchOpenCollectiveSponsors();
-  const githubSponsors = fetchGitHubSponsors();
+  const results = await Promise.all([
+    fetchOpenCollectiveSponsors(),
+    fetchGitHubSponsors(),
+  ]);
 
-  return [...(await openCollectiveSponsors), ...(await githubSponsors)];
+  return results.flat();
 }
 
 /*
@@ -257,20 +415,51 @@ const SECTION_START_BEGINNING = '<!-- BEGIN SPONSORS:';
 const SECTION_START_END = '-->';
 const SECTION_END = '<!-- END SPONSORS -->';
 
-const professionalToBackerOverrides = new Map([
-  ['Vasy Kafidoff', 'https://kafidoff.com'],
+/*
+ * Sponsors whose profile is missing a link or logo, or points somewhere other
+ * than what they asked to have listed.
+ */
+/*
+ * Extra imgix parameters, for logos that need cropping before they fit the
+ * square slot the README gives them.
+ */
+const imgixOverrides = new Map([
+  // Crop the wordmark down to just the mark on its left.
+  ['Rapidproxy', { rect: '0,0,92,92' }],
+]);
+
+const sponsorOverrides = new Map<string, Partial<Sponsor>>([
+  ['Vasy Kafidoff', { url: 'https://kafidoff.com' }],
+  [
+    'ScrapingBee',
+    {
+      url: 'https://www.scrapingbee.com/?utm_source=sponsorships&utm_medium=backlinks&utm_campaign=cheerio_js_org',
+    },
+  ],
+  [
+    'Rapidproxy',
+    {
+      url: 'https://www.rapidproxy.io/?ref=cheerio',
+      image:
+        'https://www.rapidproxy.io/static/rapidproxy/images/hd_ft_public/rapidproxy_logo.webp',
+    },
+  ],
 ]);
 
 const sponsors = await fetchSponsors();
 
+console.log('Received sponsors:', sponsors);
+
 // Remove sponsors that are already in the pre-populated headliners
 for (let i = 0; i < sponsors.length; i++) {
   if (
-    tierSponsors.headliner.some((sponsor) => sponsor.url === sponsors[i].url)
+    tierSponsors.headliner.every((sponsor) => sponsor.url !== sponsors[i].url)
   ) {
-    sponsors.splice(i, 1);
-    i--;
+    continue;
   }
+
+  sponsors.splice(i, 1);
+  i--;
 }
 
 sponsors.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
@@ -278,21 +467,17 @@ sponsors.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 // Process into a useful format
 for (const sponsor of sponsors) {
   if (
-    sponsor.tier !== 'sponsor' &&
-    (!sponsor.tier ||
-      sponsor.type === 'ORGANIZATION' ||
-      MISLABELED_ORGS.test(sponsor.name) ||
-      MISLABELED_ORGS.test(sponsor.url))
+    !sponsor.tier || // Always skip if sponsor has no tier (e.g., donation < $5)
+    // OR if it's a 'professional' or 'backer' tier AND meets specific filtering criteria
+    ((sponsor.tier === 'professional' || sponsor.tier === 'backer') &&
+      (sponsor.type === 'ORGANIZATION' ||
+        MISLABELED_ORGS.test(sponsor.name) ||
+        MISLABELED_ORGS.test(sponsor.url)))
   ) {
     continue;
   }
 
-  if (
-    (sponsor.tier === 'professional' || sponsor.tier === 'backer') &&
-    professionalToBackerOverrides.has(sponsor.name)
-  ) {
-    sponsor.url = professionalToBackerOverrides.get(sponsor.name)!;
-  }
+  Object.assign(sponsor, sponsorOverrides.get(sponsor.name));
 
   tierSponsors[sponsor.tier].push(sponsor);
 }
@@ -301,7 +486,7 @@ for (const tier of Object.values(tierSponsors)) {
   // Sort order based on total donations
   tier.sort((a: Sponsor, b: Sponsor) => b.totalDonations - a.totalDonations);
 
-  // Set all montly donations to 0
+  // Set all donations to 0 before writing to JSON
   for (const sponsor of tier) {
     sponsor.monthlyDonation = 0;
     sponsor.totalDonations = 0;
@@ -359,6 +544,7 @@ for (let sectionStartIndex = 0; ; ) {
                 h: size,
                 fit: 'fillmax',
                 fill: 'solid',
+                ...imgixOverrides.get(s.name),
               },
             )}" title="${s.name}" alt="${s.name}"></img>
           </a>`;

@@ -3,7 +3,7 @@ name: Update Sponsors
 on:
   schedule:
     # Run once a day, at 4pm
-    - cron: '0 16 * * *'
+    - cron: "0 16 * * *"
   # Allow manual trigger
   workflow_dispatch:
 
@@ -22,13 +22,15 @@ jobs:
 
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.2.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: lts/*
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install npm dependencies
         run: npm ci
@@ -40,10 +42,10 @@ jobs:
           IMGIX_TOKEN: ${{ secrets.IMGIX_TOKEN }}
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8
         continue-on-error: true
         with:
-          commit-message: 'docs(readme): Update Sponsors'
+          commit-message: "docs(readme): Update Sponsors"
           title: Update Sponsors
           branch: docs/sponsors
           delete-branch: true
